@@ -276,7 +276,8 @@
 
 <script>
   const $ = (id) => document.getElementById(id);
-  const STORAGE_KEY = "DECAICDC_records_v1";
+  const STORAGE_KEY = "records_" + document.title.replace(/\s+/g, "_");
+
 
   let records = [];
   let editIndex = -1;
@@ -887,3 +888,4 @@
 </script>
 </body>
 </html>
+
