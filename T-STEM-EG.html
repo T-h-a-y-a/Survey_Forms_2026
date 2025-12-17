@@ -610,7 +610,7 @@
     setCheckedValues("Q8", (d.Q8||"").split(",").filter(Boolean));
     setCheckedValues("Q9", (d.Q9||"").split(",").filter(Boolean));
 
-    setCheckedValues("Q10", d.Q10 === "Y" ? ["Yes"] : d.Q10 === "N" ? ["No"] : []);
+    setCheckedValues("Q10", d.Q10 === "A" ? ["Yes"] : d.Q10 === "B" ? ["No"] : []);
 
     $("Q11A").value = d.Q11A || "";
     $("Q11B").value = d.Q11B || "";
@@ -888,4 +888,5 @@
 </script>
 </body>
 </html>
+
 
