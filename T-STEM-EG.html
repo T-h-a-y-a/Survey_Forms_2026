@@ -168,9 +168,9 @@
         <div class="checks-wrap"><label class="mini">Q9 (A to F)</label><div id="Q9" class="checks cols-8"></div></div>
 
         <div class="checks-wrap">
-          <label class="mini">Q10 (Yes / No) - select one</label>
+          <label class="mini">Q10 (Yes / No) - select one (Excel: Yes=A, No=B)</label>
           <div id="Q10" class="checks cols-8"></div>
-          <div class="hint">Only one allowed. Saved as Y or N.</div>
+          <div class="hint">Only one allowed. Saved as A or B.</div>
         </div>
 
         <div class="checks-wrap">
@@ -276,8 +276,9 @@
 
 <script>
   const $ = (id) => document.getElementById(id);
-  const STORAGE_KEY = "records_" + document.title.replace(/\s+/g, "_");
 
+  // ✅ unique storage per form (by title)
+  const STORAGE_KEY = "records_" + document.title.replace(/\s+/g, "_");
 
   let records = [];
   let editIndex = -1;
@@ -330,7 +331,7 @@
     });
   }
 
-  // ✅ NEW: enforce max selections (Q12=3, Q17=2)
+  // ✅ enforce max selections (hard limit)
   function enforceMaxSelections(name, maxAllowed, friendlyLabel){
     document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
       cb.addEventListener("change", () => {
@@ -355,12 +356,14 @@
     document.querySelectorAll(`input[name="${name}"]`).forEach(i => i.checked = set.has(i.value));
   }
 
-  function yesNoToYN_fromCheckbox(name){
+  // ✅ Q10 mapping: Yes -> A, No -> B
+  function yesNoToAB_fromCheckbox(name){
     const v = getCheckedValues(name)[0] || "";
-    if (v === "Yes") return "Y";
-    if (v === "No") return "N";
+    if (v === "Yes") return "A";
+    if (v === "No") return "B";
     return "";
   }
+
   function yesNoToYN_fromSelect(selectId){
     const v = $(selectId).value || "";
     if (v === "Yes") return "Y";
@@ -412,7 +415,6 @@
     makeCheckboxGroup("Q17", "Q17", alphaRange("A","Z"));
     makeCheckboxGroup("Q18", "Q18", alphaRange("A","G"));
 
-    // ✅ Apply max selection rules
     enforceMaxSelections("Q12", 3, "Q12");
     enforceMaxSelections("Q17", 2, "Q17");
 
@@ -487,7 +489,6 @@
   }
 
   function getFormData() {
-    // ✅ Only keep first 3 for Q12, and first 2 for Q17
     const q12vals = getCheckedValues("Q12").slice(0, 3);
     const q17vals = getCheckedValues("Q17").slice(0, 2);
 
@@ -504,6 +505,7 @@
 
       Address: $("Address").value.trim(),
       Address2: $("Address2").value.trim(),
+
       City: $("City").value.trim(),
       State: $("State").value.trim().toUpperCase(),
       ZIP: $("ZIP").value.trim(),
@@ -517,6 +519,7 @@
       BirthYear: $("BirthYear").value.trim(),
 
       GPA: $("GPA").value,
+
       Email: $("Email").value.trim(),
       MobilePhone: $("MobilePhone").value.trim(),
       TeacherLastName: $("TeacherLastName").value.trim(),
@@ -531,13 +534,13 @@
       Q8: getCheckedValues("Q8").join(","),
       Q9: getCheckedValues("Q9").join(","),
 
-      Q10: yesNoToYN_fromCheckbox("Q10"),
+      // ✅ Q10 Yes/No => A/B
+      Q10: yesNoToAB_fromCheckbox("Q10"),
 
       Q11A: $("Q11A").value.trim().toUpperCase(),
       Q11B: $("Q11B").value.trim().toUpperCase(),
       Q11C: $("Q11C").value.trim().toUpperCase(),
 
-      // ✅ Q12 limited + split columns
       Q12: q12vals.join(","),
       Q12A: q12vals[0] || "",
       Q12B: q12vals[1] || "",
@@ -557,7 +560,6 @@
       Q15: getCheckedValues("Q15").join(","),
       Q16: getCheckedValues("Q16").join(","),
 
-      // ✅ Q17 limited + split columns
       Q17: q17vals.join(","),
       Q17A: q17vals[0] || "",
       Q17B: q17vals[1] || "",
@@ -566,7 +568,7 @@
 
       Q19: $("Q19").value.trim(),
 
-      Q20: yesNoToYN_fromCheckbox("Q20"),
+      Q20: (getCheckedValues("Q20")[0] === "Yes") ? "Y" : (getCheckedValues("Q20")[0] === "No") ? "N" : "",
 
       _savedAt: new Date().toISOString()
     };
@@ -583,6 +585,7 @@
 
     $("Address").value = d.Address || "";
     $("Address2").value = d.Address2 || "";
+
     $("City").value = d.City || "";
     $("State").value = d.State || "";
     $("ZIP").value = d.ZIP || "";
@@ -596,6 +599,7 @@
     $("BirthYear").value = d.BirthYear || "";
 
     $("GPA").value = d.GPA || "";
+
     $("Email").value = d.Email || "";
     $("MobilePhone").value = d.MobilePhone || "";
     $("TeacherLastName").value = d.TeacherLastName || "";
@@ -610,13 +614,13 @@
     setCheckedValues("Q8", (d.Q8||"").split(",").filter(Boolean));
     setCheckedValues("Q9", (d.Q9||"").split(",").filter(Boolean));
 
+    // ✅ Q10 A/B back to Yes/No selection
     setCheckedValues("Q10", d.Q10 === "A" ? ["Yes"] : d.Q10 === "B" ? ["No"] : []);
 
     $("Q11A").value = d.Q11A || "";
     $("Q11B").value = d.Q11B || "";
     $("Q11C").value = d.Q11C || "";
 
-    // ✅ Refill Q12 from Q12A/Q12B/Q12C first
     const q12Set = [d.Q12A, d.Q12B, d.Q12C].filter(Boolean);
     setCheckedValues("Q12", q12Set.length ? q12Set : (d.Q12||"").split(",").filter(Boolean).slice(0,3));
 
@@ -634,7 +638,6 @@
     setCheckedValues("Q15",(d.Q15||"").split(",").filter(Boolean));
     setCheckedValues("Q16",(d.Q16||"").split(",").filter(Boolean));
 
-    // ✅ Refill Q17 from Q17A/Q17B first
     const q17Set = [d.Q17A, d.Q17B].filter(Boolean);
     setCheckedValues("Q17", q17Set.length ? q17Set : (d.Q17||"").split(",").filter(Boolean).slice(0,2));
 
@@ -760,7 +763,6 @@
     setMsg("All stored data deleted.", "success");
   });
 
-  // ✅ EXPORT in your exact column order + empty columns
   $("exportBtn").addEventListener("click", () => {
     if (!records.length) return setMsg("No records to export.", "error");
 
@@ -819,7 +821,7 @@
       r.TeacherLastName || "",
 
       r.Q9 || "",
-      r.Q10 || "",
+      r.Q10 || "",         // ✅ A/B comes here
       r.Q8 || "",
       r.Q14 || "",
 
@@ -827,9 +829,9 @@
       r.Q12B || "",
       r.Q12C || "",
 
-      "",              // Empty Column
+      "",
       r.Q7 || "",
-      "",              // Empty Column
+      "",
 
       r.Q15 || "",
       r.Q16 || "",
@@ -837,7 +839,7 @@
       r.Q17A || "",
       r.Q17B || "",
 
-      "", "", "",      // 3 Empty Columns
+      "", "", "",
 
       r.Q18 || "",
 
@@ -857,11 +859,11 @@
       r.Q13C2 || "",
       r.Q13C3 || "",
 
-      "", "", "", "", "", "",   // 6 Empty Columns
+      "", "", "", "", "", "",
 
       r.Q20 || "",
 
-      "",              // Empty Column
+      "",
 
       r.Q1 || "",
       r.Q2 || "",
@@ -888,5 +890,3 @@
 </script>
 </body>
 </html>
-
-
