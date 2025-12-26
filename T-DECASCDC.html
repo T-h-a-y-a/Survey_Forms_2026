@@ -14,7 +14,7 @@
     form { background: #fff; border: 1px solid var(--bd); border-radius: 10px; padding: 14px; }
     fieldset { border: 1px solid var(--bd); border-radius: 10px; padding: 12px; margin: 0 0 14px; }
     legend { padding: 0 8px; font-weight: 700; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }7
     .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap); }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
     .full { grid-column: 1 / -1; }
@@ -222,7 +222,7 @@
         <div class="checks-wrap">
           <label class="mini">Q7 (Yes / No) - select one</label>
           <div id="Q7" class="checks cols-8"></div>
-          <div class="hint">Only one allowed. Saved as Y or N.</div>
+          <div class="hint">Only one allowed. Saved as A or B.</div>
         </div>
 
         <div class="checks-wrap">
@@ -724,7 +724,7 @@
     setCheckedValues("Q12", (d.Q12||"").split(",").filter(Boolean));
     setCheckedValues("Q13", (d.Q13||"").split(",").filter(Boolean));
 
-    setCheckedValues("Q7",  d.Q7 === "Y" ? ["Yes"] : d.Q7 === "N" ? ["No"] : []);
+    setCheckedValues("Q7",  d.Q7 === "A" ? ["Yes"] : d.Q7 === "B" ? ["No"] : []);
     setCheckedValues("Q16", d.Q16 === "Y" ? ["Yes"] : d.Q16 === "N" ? ["No"] : []);
 
     $("Q14A").value = d.Q14A || "";
@@ -1005,4 +1005,5 @@
 </script>
 </body>
 </html>
+
 
