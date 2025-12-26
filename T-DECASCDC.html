@@ -14,7 +14,7 @@
     form { background: #fff; border: 1px solid var(--bd); border-radius: 10px; padding: 14px; }
     fieldset { border: 1px solid var(--bd); border-radius: 10px; padding: 12px; margin: 0 0 14px; }
     legend { padding: 0 8px; font-weight: 700; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }7
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); } /* ✅ removed stray 7 */
     .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap); }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
     .full { grid-column: 1 / -1; }
@@ -43,10 +43,7 @@
     .checks label { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; }
     .checks input { width: auto; }
 
-    /* Questions one-by-one (single column) */
     .qgrid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-
-    /* Optional: big list scroll */
     .checks.big-list { max-height: 260px; overflow: auto; }
 
     .actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -95,6 +92,7 @@
         </div>
         <div>
           <label>SurveyType (Fixed)</label>
+          <!-- UI shows DS, but export uses DC below (kept as your original behavior) -->
           <input id="SurveyType" name="SurveyType" value="DS" readonly />
         </div>
         <div>
@@ -222,7 +220,7 @@
         <div class="checks-wrap">
           <label class="mini">Q7 (Yes / No) - select one</label>
           <div id="Q7" class="checks cols-8"></div>
-          <div class="hint">Only one allowed. Saved as A or B.</div>
+          <div class="hint">Only one allowed. Saved as A (Yes) or B (No).</div>
         </div>
 
         <div class="checks-wrap">
@@ -468,6 +466,15 @@
     document.querySelectorAll(`input[name="${name}"]`).forEach(i => i.checked = set.has(i.value));
   }
 
+  // ✅ Q7 must export A/B
+  function yesNoToAB_fromCheckbox(name){
+    const v = getCheckedValues(name)[0] || "";
+    if (v === "Yes") return "A";
+    if (v === "No")  return "B";
+    return "";
+  }
+
+  // ✅ Q16 remains Y/N
   function yesNoToYN_fromCheckbox(name){
     const v = getCheckedValues(name)[0] || "";
     if (v === "Yes") return "Y";
@@ -521,7 +528,6 @@
     makeCheckboxGroup("Q8",  "Q8",  alphaRange("A","H"));
     makeCheckboxGroup("Q9",  "Q9",  alphaRange("A","L"));
 
-    // Q10 is 1..72, but only 3 selections are kept
     makeCheckboxGroup("Q10", "Q10", numRange(1,72));
 
     makeCheckboxGroup("Q11", "Q11", alphaRange("A","T"));
@@ -532,7 +538,6 @@
     makeSingleSelectCheckboxGroup("Q7");
     makeSingleSelectCheckboxGroup("Q16");
 
-    // ✅ enforce keep-only-3 for Q10
     makeMaxSelectCheckboxGroup("Q10", 3);
 
     document.querySelectorAll("input,select,textarea").forEach(el => {
@@ -637,11 +642,11 @@
       Q4: getCheckedValues("Q4").join(","),
       Q5: getCheckedValues("Q5").join(","),
       Q6: getCheckedValues("Q6").join(","),
-      Q7: yesNoToYN_fromCheckbox("Q7"),
+      // ✅ Q7 -> A/B
+      Q7: yesNoToAB_fromCheckbox("Q7"),
       Q8: getCheckedValues("Q8").join(","),
       Q9: getCheckedValues("Q9").join(","),
 
-      // ✅ Split Q10 into 3 separate fields
       Q10A: q10vals[0] || "",
       Q10B: q10vals[1] || "",
       Q10C: q10vals[2] || "",
@@ -664,6 +669,7 @@
       Q15C2: $("Q15C2").value.trim().toUpperCase(),
       Q15C3: yesNoToYN_fromSelect("Q15C3"),
 
+      // ✅ Q16 stays Y/N
       Q16: yesNoToYN_fromCheckbox("Q16"),
       _savedAt: new Date().toISOString()
     };
@@ -701,7 +707,6 @@
     setCheckedValues("Q8",  (d.Q8||"").split(",").filter(Boolean));
     setCheckedValues("Q9",  (d.Q9||"").split(",").filter(Boolean));
 
-    // ✅ Load Q10 from Q10A/B/C (or fallback to old Q10 string if ever present)
     const q10arr =
       (d.Q10A || d.Q10B || d.Q10C)
         ? [d.Q10A, d.Q10B, d.Q10C].filter(Boolean)
@@ -709,13 +714,7 @@
 
     setCheckedValues("Q10", q10arr);
 
-    // set selection order so replacement behavior continues nicely
-    [...document.querySelectorAll('input[name="Q10"]:checked')].forEach(() => {
-      // assign increasing order in existing sequence
-      // (this is enough so future clicks "drop the most recently old")
-      // eslint-disable-next-line no-unused-expressions
-      _selCounter++;
-    });
+    [...document.querySelectorAll('input[name="Q10"]:checked')].forEach(() => { _selCounter++; });
     [...document.querySelectorAll('input[name="Q10"]:checked')].forEach(cb => {
       cb.dataset.sel = String(++_selCounter);
     });
@@ -724,7 +723,9 @@
     setCheckedValues("Q12", (d.Q12||"").split(",").filter(Boolean));
     setCheckedValues("Q13", (d.Q13||"").split(",").filter(Boolean));
 
+    // ✅ Q7 loads A/B
     setCheckedValues("Q7",  d.Q7 === "A" ? ["Yes"] : d.Q7 === "B" ? ["No"] : []);
+    // ✅ Q16 loads Y/N
     setCheckedValues("Q16", d.Q16 === "Y" ? ["Yes"] : d.Q16 === "N" ? ["No"] : []);
 
     $("Q14A").value = d.Q14A || "";
@@ -864,68 +865,20 @@
     if (!records.length) return setMsg("No records to export.", "error");
 
     const headers = [
-      "SurveyYear",
-      "SurveyType",
-      "EVID",
-      "Form",
-      "FirstName",
-      "MiddleInitial",
-      "LastName",
-      "Suffix",
-      "Address",
-      "Address2",
-      "City",
-      "State",
-      "ZIP",
-      "ZIP4",
-      "Gender",
-      "GradYear",
-      "BirthMonth",
-      "BirthDay",
-      "BirthYear",
-      "GPA",
-      "Email",
-      "MobilePhone",
-      "TeacherLastName",
-      "Q5",
-      "Q7",
-      "Q8",
-      "Q6",
-      "Q10A",
-      "Q10B",
-      "Q10C",
-      "",       // Empty column
-      "Q11",
-      "",       // Empty column
-      "Q9",
-      "Q12",
+      "SurveyYear","SurveyType","EVID","Form","FirstName","MiddleInitial","LastName","Suffix",
+      "Address","Address2","City","State","ZIP","ZIP4","Gender","GradYear","BirthMonth","BirthDay","BirthYear",
+      "GPA","Email","MobilePhone","TeacherLastName",
+      "Q5","Q7","Q8","Q6","Q10A","Q10B","Q10C",
+      "", "Q11", "", "Q9", "Q12",
       "", "", "", "", "",  // 5 Empty columns
-      "Q13",
-      "Q14A",
-      "Q14B",
-      "Q14C",
-      "Q15A1",
-      "Q15A2",
-      "Q15A3",
-      "Q15B1",
-      "Q15B2",
-      "Q15B3",
-      "Q15C1",
-      "Q15C2",
-      "Q15C3",
+      "Q13","Q14A","Q14B","Q14C","Q15A1","Q15A2","Q15A3","Q15B1","Q15B2","Q15B3","Q15C1","Q15C2","Q15C3",
       "", "", "", "", "", "", // 6 Empty columns
-      "Q16",
-      "",       // Empty column
-      "Q1",
-      "Q2",
-      "Q3",
-      "Q4"
+      "Q16","", "Q1","Q2","Q3","Q4"
     ];
 
     const aoa = [headers];
 
     records.forEach(r => {
-      // in case old data ever had Q10 as a string
       const oldQ10 = (r.Q10 || "").split(",").filter(Boolean);
       const Q10A = r.Q10A || oldQ10[0] || "";
       const Q10B = r.Q10B || oldQ10[1] || "";
@@ -956,16 +909,17 @@
         r.MobilePhone || "",
         r.TeacherLastName || "",
         r.Q5 || "",
+        // ✅ Q7 already stored as A/B, so Excel will show A/B
         r.Q7 || "",
         r.Q8 || "",
         r.Q6 || "",
         Q10A, Q10B, Q10C,
-        "",               // Empty column
+        "",
         r.Q11 || "",
-        "",               // Empty column
+        "",
         r.Q9 || "",
         r.Q12 || "",
-        "", "", "", "", "", // 5 Empty columns
+        "", "", "", "", "",
         r.Q13 || "",
         r.Q14A || "",
         r.Q14B || "",
@@ -979,9 +933,9 @@
         r.Q15C1 || "",
         r.Q15C2 || "",
         r.Q15C3 || "",
-        "", "", "", "", "", "", // 6 Empty columns
+        "", "", "", "", "", "",
         r.Q16 || "",
-        "",               // Empty column
+        "",
         r.Q1 || "",
         r.Q2 || "",
         r.Q3 || "",
@@ -1005,5 +959,3 @@
 </script>
 </body>
 </html>
-
-
