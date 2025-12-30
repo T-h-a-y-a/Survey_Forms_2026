@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>T-STEM-EG-26</title>
+  <style>
+    :root { --gap: 12px; --bd:#d9d9d9; --bg:#f7f7f8; }
+    body { font-family: system-ui, Arial, sans-serif; margin: 0; background: var(--bg); }
+    header { padding: 16px 18px; background: #111; color: #fff; }
+    header h1 { margin: 0; font-size: 18px; letter-spacing: .5px; }
+    main { padding: 18px; max-width: 1200px; margin: 0 auto; }
+
+    form { background: #fff; border: 1px solid var(--bd); border-radius: 10px; padding: 14px; }
+    fieldset { border: 1px solid var(--bd); border-radius: 10px; padding: 12px; margin: 0 0 14px; }
+    legend { padding: 0 8px; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap); }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
+    .full { grid-column: 1 / -1; }
+
+    label { display: block; font-size: 12px; color: #333; margin-bottom: 6px; font-weight: 500; }
+    input, select, textarea {
+      width: 100%; box-sizing: border-box;
+      border: 1px solid var(--bd); border-radius: 8px;
+      padding: 10px; font-size: 14px; background: #fff;
+    }
+    input[readonly] { background: #f2f2f2; }
+    .hint { font-size: 11px; color: #666; margin-top: 6px; }
+
+    .checks-wrap { border: 1px solid var(--bd); border-radius: 10px; padding: 10px; background: #fff; }
+    .checks {
+      display: grid; gap: 8px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      max-height: 170px; overflow: auto; padding-right: 6px;
+    }
+    .checks.cols-8 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+    .checks.cols-10 { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+    .checks.cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+    .checks label { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; }
+    .checks input { width: auto; }
+
+    .qgrid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+    .checks.big-numbers {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      max-height: 260px;
+      overflow: auto;
+    }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    button { border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 650; cursor: pointer; }
+    button.primary { background: #1a73e8; color: #fff; }
+    button.secondary { background: #eee; }
+    button.danger { background: #d93025; color: #fff; }
+    button.ok { background: #188038; color: #fff; }
+    .msg { margin: 10px 0 0; font-size: 13px; }
+    .msg.error { color: #b00020; }
+    .msg.success { color: #0b6b2b; }
+
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--bd); border-radius: 10px; overflow: hidden; }
+    th, td { border-bottom: 1px solid var(--bd); padding: 10px; text-align: left; font-size: 13px; vertical-align: top; }
+    th { background: #f2f2f2; position: sticky; top: 0; z-index: 1; }
+    .table-wrap { margin-top: 14px; border-radius: 10px; overflow: auto; max-height: 420px; border: 1px solid var(--bd); }
+    .mini { font-size: 12px; color: #444; }
+    .nowrap { white-space: nowrap; }
+
+    .birth-row { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 12px; }
+
+    @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, 1fr);} }
+    @media (max-width: 650px)  {
+      .grid, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .checks { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .birth-row { grid-template-columns: 1fr 1fr 1fr; }
+      .checks.big-numbers { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+<header><h1>T-STEM-EG-26</h1></header>
+
+<main>
+  <form id="decaForm" autocomplete="off" novalidate>
+    <fieldset>
+      <legend>Fixed Survey Info</legend>
+      <div class="grid">
+        <div><label>SurveyYear (Fixed)</label><input id="SurveyYear" value="2026" readonly /></div>
+        <div><label>SurveyType (Fixed)</label><input id="SurveyType" value="HY" readonly /></div>
+        <div>
+          <label>EVID (exactly 9 chars)</label>
+          <input id="EVID" minlength="9" maxlength="9" required />
+          <div class="hint">Must be exactly 9 characters.</div>
+        </div>
+        <div>
+          <label>Form (exactly 5 chars)</label>
+          <input id="Form" minlength="5" maxlength="5" required />
+          <div class="hint">Must be exactly 5 characters.</div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Student Details</legend>
+      <div class="grid">
+        <div><label>First name</label><input id="FirstName" /></div>
+        <div><label>Middle Initial</label><input id="MiddleInitial" maxlength="1" /></div>
+        <div><label>Last name</label><input id="LastName" /></div>
+        <div><label>Suffix</label><input id="Suffix" /></div>
+
+        <div class="full"><label>Address</label><input id="Address" /></div>
+        <div class="full"><label>Address 2</label><input id="Address2" /></div>
+
+        <div><label>City</label><input id="City" /></div>
+        <div><label>State (2 chars)</label><input id="State" minlength="2" maxlength="2" /></div>
+        <div><label>ZIP (5 chars)</label><input id="ZIP" minlength="5" maxlength="5" inputmode="numeric" /></div>
+        <div><label>ZIP4 (4 chars)</label><input id="ZIP4" minlength="4" maxlength="4" inputmode="numeric" /></div>
+
+        <div>
+          <label>Gender</label>
+          <select id="Gender">
+            <option value="">--select--</option>
+            <option value="M">M = Male</option>
+            <option value="F">F = Female</option>
+            <option value="A">A = Prefer Not to Respond</option>
+          </select>
+        </div>
+
+        <div><label>GradYear</label><select id="GradYear"></select></div>
+
+        <div class="full">
+          <label>Birth (MM / DD / YYYY)</label>
+          <div class="birth-row">
+            <input id="BirthMonth" minlength="2" maxlength="2" placeholder="MM" inputmode="numeric" />
+            <input id="BirthDay" minlength="2" maxlength="2" placeholder="DD" inputmode="numeric" />
+            <input id="BirthYear" minlength="4" maxlength="4" placeholder="YYYY" inputmode="numeric" />
+          </div>
+          <div class="hint">Month 01–12, Day 01–31, Year 2006–2013</div>
+        </div>
+
+        <div>
+          <label>GPA</label>
+          <select id="GPA">
+            <option value="">--select--</option>
+            <option>A+</option><option>A</option><option>A-</option>
+            <option>B+</option><option>B</option><option>B-</option>
+            <option>C+</option><option>C</option><option>LC</option>
+          </select>
+        </div>
+
+        <div class="full"><label>Email</label><input id="Email" type="email" /></div>
+        <div><label>MobilePhone (10 chars)</label><input id="MobilePhone" minlength="10" maxlength="10" inputmode="numeric" /></div>
+        <div><label>TeacherLastName</label><input id="TeacherLastName" /></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Questions</legend>
+
+      <div class="qgrid">
+        <div class="checks-wrap"><label class="mini">Q1 (A to C)</label><div id="Q1" class="checks cols-8"></div></div>
+        <div class="checks-wrap"><label class="mini">Q2 (A to D)</label><div id="Q2" class="checks cols-8"></div></div>
+        <div class="checks-wrap"><label class="mini">Q3 (A to D)</label><div id="Q3" class="checks cols-8"></div></div>
+        <div class="checks-wrap"><label class="mini">Q4 (A to H)</label><div id="Q4" class="checks cols-8"></div></div>
+        <div class="checks-wrap"><label class="mini">Q5 (A to C)</label><div id="Q5" class="checks cols-8"></div></div>
+        <div class="checks-wrap"><label class="mini">Q6 (A to C)</label><div id="Q6" class="checks cols-8"></div></div>
+        <div class="checks-wrap"><label class="mini">Q7 (A to T)</label><div id="Q7" class="checks cols-12"></div></div>
+        <div class="checks-wrap"><label class="mini">Q8 (A to H)</label><div id="Q8" class="checks cols-8"></div></div>
+        <div class="checks-wrap"><label class="mini">Q9 (A to F)</label><div id="Q9" class="checks cols-8"></div></div>
+
+        <div class="checks-wrap">
+          <label class="mini">Q10 (Yes / No) - select one (Excel: Yes=A, No=B)</label>
+          <div id="Q10" class="checks cols-8"></div>
+          <div class="hint">Only one allowed. Saved as A or B.</div>
+        </div>
+
+        <div class="checks-wrap">
+          <label class="mini">Q11</label>
+          <div class="grid-3" style="margin-top:8px;">
+            <div><label>Q11A (2 chars)</label><input id="Q11A" minlength="2" maxlength="2" /></div>
+            <div><label>Q11B (2 chars)</label><input id="Q11B" minlength="2" maxlength="2" /></div>
+            <div><label>Q11C (2 chars)</label><input id="Q11C" minlength="2" maxlength="2" /></div>
+          </div>
+        </div>
+
+        <div class="checks-wrap">
+          <label class="mini">Q12 (1 to 72) - max 3 selections (saved as Q12A/Q12B/Q12C)</label>
+          <div id="Q12" class="checks big-numbers"></div>
+          <div class="hint">Max 3 selections allowed.</div>
+        </div>
+
+        <div class="checks-wrap">
+          <label class="mini">Q13</label>
+          <div class="grid" style="margin-top:8px;">
+            <div class="full"><strong>Q13A</strong></div>
+            <div class="full"><label>Q13A1 – College name</label><input id="Q13A1" /></div>
+            <div><label>Q13A2 – State code (2 chars)</label><input id="Q13A2" minlength="2" maxlength="2" /></div>
+            <div>
+              <label>Q13A3 – Yes/No (Saved as Y/N)</label>
+              <select id="Q13A3"><option value="">--select--</option><option>Yes</option><option>No</option></select>
+            </div>
+
+            <div class="full"><strong>Q13B</strong></div>
+            <div class="full"><label>Q13B1 – College name</label><input id="Q13B1" /></div>
+            <div><label>Q13B2 – State code (2 chars)</label><input id="Q13B2" minlength="2" maxlength="2" /></div>
+            <div>
+              <label>Q13B3 – Yes/No (Saved as Y/N)</label>
+              <select id="Q13B3"><option value="">--select--</option><option>Yes</option><option>No</option></select>
+            </div>
+
+            <div class="full"><strong>Q13C</strong></div>
+            <div class="full"><label>Q13C1 – College name</label><input id="Q13C1" /></div>
+            <div><label>Q13C2 – State code (2 chars)</label><input id="Q13C2" minlength="2" maxlength="2" /></div>
+            <div>
+              <label>Q13C3 – Yes/No (Saved as Y/N)</label>
+              <select id="Q13C3"><option value="">--select--</option><option>Yes</option><option>No</option></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="checks-wrap"><label class="mini">Q14 (A to H)</label><div id="Q14" class="checks cols-8"></div></div>
+        <div class="checks-wrap"><label class="mini">Q15 (A to L)</label><div id="Q15" class="checks cols-12"></div></div>
+        <div class="checks-wrap"><label class="mini">Q16 (A to Q)</label><div id="Q16" class="checks cols-12"></div></div>
+
+        <div class="checks-wrap">
+          <label class="mini">Q17 (A to Z) - max 2 selections (saved as Q17A/Q17B)</label>
+          <div id="Q17" class="checks cols-12"></div>
+          <div class="hint">Max 2 selections allowed.</div>
+        </div>
+
+        <div class="checks-wrap"><label class="mini">Q18 (A to G)</label><div id="Q18" class="checks cols-8"></div></div>
+
+        <div class="checks-wrap">
+          <label class="mini">Q19 (Input Field)</label>
+          <input id="Q19" />
+        </div>
+
+        <div class="checks-wrap">
+          <label class="mini">Q20 (Yes / No) - select one</label>
+          <div id="Q20" class="checks cols-8"></div>
+          <div class="hint">Only one allowed. Saved as Y or N.</div>
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="actions">
+      <button id="submitBtn" class="primary" type="submit">Submit</button>
+      <button id="resetBtn" class="secondary" type="button">Clear Form</button>
+      <button id="exportBtn" class="ok" type="button">Download Excel</button>
+      <button id="clearAllBtn" class="danger" type="button">Delete All Stored Data</button>
+    </div>
+
+    <p id="msg" class="msg"></p>
+  </form>
+
+  <h2 style="margin:14px 0 8px;">Stored Records</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="nowrap">#</th>
+          <th class="nowrap">EVID</th>
+          <th class="nowrap">Form</th>
+          <th>Name</th>
+          <th class="nowrap">GradYear</th>
+          <th>Contact</th>
+          <th>Q Summary</th>
+          <th class="nowrap">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  // ✅ unique storage per form (by title)
+  const STORAGE_KEY = "records_" + document.title.replace(/\s+/g, "_");
+
+  let records = [];
+  let editIndex = -1;
+  let dirty = false;
+
+  function setMsg(text, type="") {
+    const el = $("msg");
+    el.textContent = text || "";
+    el.className = "msg " + (type || "");
+  }
+
+  function alphaRange(startChar, endChar) {
+    const start = startChar.charCodeAt(0);
+    const end = endChar.charCodeAt(0);
+    const out = [];
+    for (let c = start; c <= end; c++) out.push(String.fromCharCode(c));
+    return out;
+  }
+  function numRange(a, b) {
+    const out = [];
+    for (let i = a; i <= b; i++) out.push(String(i));
+    return out;
+  }
+
+  function makeCheckboxGroup(containerId, name, options) {
+    const box = $(containerId);
+    box.innerHTML = "";
+    options.forEach(opt => {
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.name = name;
+      input.value = opt;
+      input.addEventListener("change", () => { dirty = true; });
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(opt));
+      box.appendChild(label);
+    });
+  }
+
+  function makeSingleSelectCheckboxGroup(name){
+    document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
+      cb.addEventListener("change", () => {
+        if (!cb.checked) return;
+        document.querySelectorAll(`input[name="${name}"]`).forEach(other => {
+          if (other !== cb) other.checked = false;
+        });
+        dirty = true;
+      });
+    });
+  }
+
+  // ✅ enforce max selections (hard limit)
+  function enforceMaxSelections(name, maxAllowed, friendlyLabel){
+    document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
+      cb.addEventListener("change", () => {
+        if (!cb.checked) return;
+        const checked = [...document.querySelectorAll(`input[name="${name}"]:checked`)];
+        if (checked.length > maxAllowed) {
+          cb.checked = false;
+          setMsg(`${friendlyLabel}: Only ${maxAllowed} selections allowed.`, "error");
+        } else {
+          setMsg("");
+        }
+        dirty = true;
+      });
+    });
+  }
+
+  function getCheckedValues(name) {
+    return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(i => i.value);
+  }
+  function setCheckedValues(name, values) {
+    const set = new Set(values || []);
+    document.querySelectorAll(`input[name="${name}"]`).forEach(i => i.checked = set.has(i.value));
+  }
+
+  // ✅ Q10 mapping: Yes -> A, No -> B
+  function yesNoToAB_fromCheckbox(name){
+    const v = getCheckedValues(name)[0] || "";
+    if (v === "Yes") return "A";
+    if (v === "No") return "B";
+    return "";
+  }
+
+  function yesNoToYN_fromSelect(selectId){
+    const v = $(selectId).value || "";
+    if (v === "Yes") return "Y";
+    if (v === "No") return "N";
+    return "";
+  }
+
+  function upperTrim(id) {
+    const el = $(id);
+    if (el) el.value = (el.value || "").trim().toUpperCase();
+  }
+  function isExactLen(val, len) { return (val ?? "").length === len; }
+
+  function loadFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      records = raw ? JSON.parse(raw) : [];
+    } catch { records = []; }
+  }
+  function saveToStorage() { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+
+  function init() {
+    const gy = $("GradYear");
+    gy.innerHTML = `<option value="">--select--</option>`;
+    for (let y = 2026; y <= 2031; y++) {
+      const o = document.createElement("option");
+      o.value = String(y);
+      o.textContent = String(y);
+      gy.appendChild(o);
+    }
+
+    makeCheckboxGroup("Q1",  "Q1",  alphaRange("A","C"));
+    makeCheckboxGroup("Q2",  "Q2",  alphaRange("A","D"));
+    makeCheckboxGroup("Q3",  "Q3",  alphaRange("A","D"));
+    makeCheckboxGroup("Q4",  "Q4",  alphaRange("A","H"));
+    makeCheckboxGroup("Q5",  "Q5",  alphaRange("A","C"));
+    makeCheckboxGroup("Q6",  "Q6",  alphaRange("A","C"));
+    makeCheckboxGroup("Q7",  "Q7",  alphaRange("A","T"));
+    makeCheckboxGroup("Q8",  "Q8",  alphaRange("A","H"));
+    makeCheckboxGroup("Q9",  "Q9",  alphaRange("A","F"));
+
+    makeCheckboxGroup("Q10", "Q10", ["Yes","No"]);
+    makeSingleSelectCheckboxGroup("Q10");
+
+    makeCheckboxGroup("Q12", "Q12", numRange(1,72));
+    makeCheckboxGroup("Q14", "Q14", alphaRange("A","H"));
+    makeCheckboxGroup("Q15", "Q15", alphaRange("A","L"));
+    makeCheckboxGroup("Q16", "Q16", alphaRange("A","Q"));
+    makeCheckboxGroup("Q17", "Q17", alphaRange("A","Z"));
+    makeCheckboxGroup("Q18", "Q18", alphaRange("A","G"));
+
+    enforceMaxSelections("Q12", 3, "Q12");
+    enforceMaxSelections("Q17", 2, "Q17");
+
+    makeCheckboxGroup("Q20", "Q20", ["Yes","No"]);
+    makeSingleSelectCheckboxGroup("Q20");
+
+    document.querySelectorAll("input,select,textarea").forEach(el => {
+      el.addEventListener("input", () => { dirty = true; });
+      el.addEventListener("change", () => { dirty = true; });
+    });
+
+    loadFromStorage();
+    renderTable();
+  }
+
+  function validate() {
+    setMsg("");
+
+    upperTrim("State");
+    upperTrim("Q11A"); upperTrim("Q11B"); upperTrim("Q11C");
+    upperTrim("Q13A2"); upperTrim("Q13B2"); upperTrim("Q13C2");
+
+    const evid = $("EVID").value.trim();
+    const form = $("Form").value.trim();
+
+    if (!isExactLen(evid, 9)) return "EVID must be exactly 9 characters.";
+    if (!isExactLen(form, 5)) return "Form must be exactly 5 characters.";
+
+    const st = $("State").value.trim();
+    if (st && !isExactLen(st, 2)) return "State must be exactly 2 characters.";
+
+    const zip = $("ZIP").value.trim();
+    if (zip && !isExactLen(zip, 5)) return "ZIP must be exactly 5 characters.";
+
+    const zip4 = $("ZIP4").value.trim();
+    if (zip4 && !isExactLen(zip4, 4)) return "ZIP4 must be exactly 4 characters.";
+
+    const mob = $("MobilePhone").value.trim();
+    if (mob && !isExactLen(mob, 10)) return "MobilePhone must be exactly 10 characters.";
+
+    const bm = $("BirthMonth").value.trim();
+    if (bm) {
+      if (!isExactLen(bm, 2)) return "BirthMonth must be exactly 2 characters.";
+      const n = Number(bm);
+      if (!Number.isInteger(n) || n < 1 || n > 12) return "BirthMonth must be between 01 and 12.";
+    }
+
+    const bd = $("BirthDay").value.trim();
+    if (bd) {
+      if (!isExactLen(bd, 2)) return "BirthDay must be exactly 2 characters.";
+      const n = Number(bd);
+      if (!Number.isInteger(n) || n < 1 || n > 31) return "BirthDay must be between 01 and 31.";
+    }
+
+    const by = $("BirthYear").value.trim();
+    if (by) {
+      if (!isExactLen(by, 4)) return "BirthYear must be exactly 4 characters.";
+      const n = Number(by);
+      if (!Number.isInteger(n) || n < 2006 || n > 2013) return "BirthYear must be between 2006 and 2013.";
+    }
+
+    for (const id of ["Q11A","Q11B","Q11C"]) {
+      const v = $(id).value.trim();
+      if (v && !isExactLen(v, 2)) return `${id} must be exactly 2 characters.`;
+    }
+    for (const id of ["Q13A2","Q13B2","Q13C2"]) {
+      const v = $(id).value.trim();
+      if (v && !isExactLen(v, 2)) return `${id} must be exactly 2 characters.`;
+    }
+
+    return "";
+  }
+
+  function getFormData() {
+    const q12vals = getCheckedValues("Q12").slice(0, 3);
+    const q17vals = getCheckedValues("Q17").slice(0, 2);
+
+    return {
+      SurveyYear: "2026",
+      SurveyType: "HY",
+      EVID: $("EVID").value.trim(),
+      Form: $("Form").value.trim(),
+
+      FirstName: $("FirstName").value.trim(),
+      MiddleInitial: $("MiddleInitial").value.trim(),
+      LastName: $("LastName").value.trim(),
+      Suffix: $("Suffix").value.trim(),
+
+      Address: $("Address").value.trim(),
+      Address2: $("Address2").value.trim(),
+
+      City: $("City").value.trim(),
+      State: $("State").value.trim().toUpperCase(),
+      ZIP: $("ZIP").value.trim(),
+      ZIP4: $("ZIP4").value.trim(),
+
+      Gender: $("Gender").value,
+      GradYear: $("GradYear").value,
+
+      BirthMonth: $("BirthMonth").value.trim(),
+      BirthDay: $("BirthDay").value.trim(),
+      BirthYear: $("BirthYear").value.trim(),
+
+      GPA: $("GPA").value,
+
+      Email: $("Email").value.trim(),
+      MobilePhone: $("MobilePhone").value.trim(),
+      TeacherLastName: $("TeacherLastName").value.trim(),
+
+      Q1: getCheckedValues("Q1").join(","),
+      Q2: getCheckedValues("Q2").join(","),
+      Q3: getCheckedValues("Q3").join(","),
+      Q4: getCheckedValues("Q4").join(","),
+      Q5: getCheckedValues("Q5").join(","),
+      Q6: getCheckedValues("Q6").join(","),
+      Q7: getCheckedValues("Q7").join(","),
+      Q8: getCheckedValues("Q8").join(","),
+      Q9: getCheckedValues("Q9").join(","),
+
+      // ✅ Q10 Yes/No => A/B
+      Q10: yesNoToAB_fromCheckbox("Q10"),
+
+      Q11A: $("Q11A").value.trim().toUpperCase(),
+      Q11B: $("Q11B").value.trim().toUpperCase(),
+      Q11C: $("Q11C").value.trim().toUpperCase(),
+
+      Q12: q12vals.join(","),
+      Q12A: q12vals[0] || "",
+      Q12B: q12vals[1] || "",
+      Q12C: q12vals[2] || "",
+
+      Q13A1: $("Q13A1").value.trim(),
+      Q13A2: $("Q13A2").value.trim().toUpperCase(),
+      Q13A3: yesNoToYN_fromSelect("Q13A3"),
+      Q13B1: $("Q13B1").value.trim(),
+      Q13B2: $("Q13B2").value.trim().toUpperCase(),
+      Q13B3: yesNoToYN_fromSelect("Q13B3"),
+      Q13C1: $("Q13C1").value.trim(),
+      Q13C2: $("Q13C2").value.trim().toUpperCase(),
+      Q13C3: yesNoToYN_fromSelect("Q13C3"),
+
+      Q14: getCheckedValues("Q14").join(","),
+      Q15: getCheckedValues("Q15").join(","),
+      Q16: getCheckedValues("Q16").join(","),
+
+      Q17: q17vals.join(","),
+      Q17A: q17vals[0] || "",
+      Q17B: q17vals[1] || "",
+
+      Q18: getCheckedValues("Q18").join(","),
+
+      Q19: $("Q19").value.trim(),
+
+      Q20: (getCheckedValues("Q20")[0] === "Yes") ? "Y" : (getCheckedValues("Q20")[0] === "No") ? "N" : "",
+
+      _savedAt: new Date().toISOString()
+    };
+  }
+
+  function fillFormData(d) {
+    $("EVID").value = d.EVID || "";
+    $("Form").value = d.Form || "";
+
+    $("FirstName").value = d.FirstName || "";
+    $("MiddleInitial").value = d.MiddleInitial || "";
+    $("LastName").value = d.LastName || "";
+    $("Suffix").value = d.Suffix || "";
+
+    $("Address").value = d.Address || "";
+    $("Address2").value = d.Address2 || "";
+
+    $("City").value = d.City || "";
+    $("State").value = d.State || "";
+    $("ZIP").value = d.ZIP || "";
+    $("ZIP4").value = d.ZIP4 || "";
+
+    $("Gender").value = d.Gender || "";
+    $("GradYear").value = d.GradYear || "";
+
+    $("BirthMonth").value = d.BirthMonth || "";
+    $("BirthDay").value = d.BirthDay || "";
+    $("BirthYear").value = d.BirthYear || "";
+
+    $("GPA").value = d.GPA || "";
+
+    $("Email").value = d.Email || "";
+    $("MobilePhone").value = d.MobilePhone || "";
+    $("TeacherLastName").value = d.TeacherLastName || "";
+
+    setCheckedValues("Q1", (d.Q1||"").split(",").filter(Boolean));
+    setCheckedValues("Q2", (d.Q2||"").split(",").filter(Boolean));
+    setCheckedValues("Q3", (d.Q3||"").split(",").filter(Boolean));
+    setCheckedValues("Q4", (d.Q4||"").split(",").filter(Boolean));
+    setCheckedValues("Q5", (d.Q5||"").split(",").filter(Boolean));
+    setCheckedValues("Q6", (d.Q6||"").split(",").filter(Boolean));
+    setCheckedValues("Q7", (d.Q7||"").split(",").filter(Boolean));
+    setCheckedValues("Q8", (d.Q8||"").split(",").filter(Boolean));
+    setCheckedValues("Q9", (d.Q9||"").split(",").filter(Boolean));
+
+    // ✅ Q10 A/B back to Yes/No selection
+    setCheckedValues("Q10", d.Q10 === "A" ? ["Yes"] : d.Q10 === "B" ? ["No"] : []);
+
+    $("Q11A").value = d.Q11A || "";
+    $("Q11B").value = d.Q11B || "";
+    $("Q11C").value = d.Q11C || "";
+
+    const q12Set = [d.Q12A, d.Q12B, d.Q12C].filter(Boolean);
+    setCheckedValues("Q12", q12Set.length ? q12Set : (d.Q12||"").split(",").filter(Boolean).slice(0,3));
+
+    $("Q13A1").value = d.Q13A1 || "";
+    $("Q13A2").value = d.Q13A2 || "";
+    $("Q13A3").value = d.Q13A3 === "Y" ? "Yes" : d.Q13A3 === "N" ? "No" : "";
+    $("Q13B1").value = d.Q13B1 || "";
+    $("Q13B2").value = d.Q13B2 || "";
+    $("Q13B3").value = d.Q13B3 === "Y" ? "Yes" : d.Q13B3 === "N" ? "No" : "";
+    $("Q13C1").value = d.Q13C1 || "";
+    $("Q13C2").value = d.Q13C2 || "";
+    $("Q13C3").value = d.Q13C3 === "Y" ? "Yes" : d.Q13C3 === "N" ? "No" : "";
+
+    setCheckedValues("Q14",(d.Q14||"").split(",").filter(Boolean));
+    setCheckedValues("Q15",(d.Q15||"").split(",").filter(Boolean));
+    setCheckedValues("Q16",(d.Q16||"").split(",").filter(Boolean));
+
+    const q17Set = [d.Q17A, d.Q17B].filter(Boolean);
+    setCheckedValues("Q17", q17Set.length ? q17Set : (d.Q17||"").split(",").filter(Boolean).slice(0,2));
+
+    setCheckedValues("Q18",(d.Q18||"").split(",").filter(Boolean));
+
+    $("Q19").value = d.Q19 || "";
+    setCheckedValues("Q20", d.Q20 === "Y" ? ["Yes"] : d.Q20 === "N" ? ["No"] : []);
+
+    dirty = true;
+  }
+
+  function clearForm() {
+    $("decaForm").reset();
+    $("SurveyYear").value = "2026";
+    $("SurveyType").value = "HY";
+
+    ["Q1","Q2","Q3","Q4","Q5","Q6","Q7","Q8","Q9","Q10","Q12","Q14","Q15","Q16","Q17","Q18","Q20"]
+      .forEach(n => setCheckedValues(n, []));
+
+    editIndex = -1;
+    $("submitBtn").textContent = "Submit";
+    setMsg("");
+    dirty = false;
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function renderTable() {
+    const tbody = $("rows");
+    tbody.innerHTML = "";
+
+    if (!records.length) {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 8;
+      td.textContent = "No records yet.";
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+
+    records.forEach((r, idx) => {
+      const tr = document.createElement("tr");
+      const name = [r.FirstName, r.MiddleInitial, r.LastName, r.Suffix].filter(Boolean).join(" ");
+      const contact = [r.Email, r.MobilePhone].filter(Boolean).join(" | ");
+      const qsum = `Q10:${r.Q10||"-"} Q12:${[r.Q12A,r.Q12B,r.Q12C].filter(Boolean).join(",")||"-"} Q17:${[r.Q17A,r.Q17B].filter(Boolean).join(",")||"-"} Q20:${r.Q20||"-"}`;
+
+      tr.innerHTML = `
+        <td class="nowrap">${idx + 1}</td>
+        <td class="nowrap">${escapeHtml(r.EVID)}</td>
+        <td class="nowrap">${escapeHtml(r.Form)}</td>
+        <td>${escapeHtml(name)}</td>
+        <td class="nowrap">${escapeHtml(r.GradYear || "")}</td>
+        <td>${escapeHtml(contact)}</td>
+        <td>${escapeHtml(qsum)}</td>
+        <td class="nowrap">
+          <button class="secondary" type="button" data-act="edit" data-idx="${idx}">Edit</button>
+          <button class="danger" type="button" data-act="del" data-idx="${idx}">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll("button[data-act]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.dataset.idx);
+        const act = btn.dataset.act;
+        if (act === "edit") {
+          editIndex = idx;
+          fillFormData(records[idx]);
+          $("submitBtn").textContent = "Update";
+          setMsg(`Editing record #${idx + 1}. Update and click "Update".`, "success");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } else if (act === "del") {
+          if (!confirm(`Delete record #${idx + 1}?`)) return;
+          records.splice(idx, 1);
+          saveToStorage();
+          renderTable();
+          setMsg("Record deleted.", "success");
+        }
+      });
+    });
+  }
+
+  $("decaForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const err = validate();
+    if (err) return setMsg(err, "error");
+
+    const data = getFormData();
+
+    if (editIndex >= 0) {
+      records[editIndex] = data;
+      editIndex = -1;
+      $("submitBtn").textContent = "Submit";
+      setMsg("Record updated.", "success");
+    } else {
+      records.push(data);
+      setMsg("Record saved.", "success");
+    }
+
+    saveToStorage();
+    renderTable();
+    clearForm();
+  });
+
+  $("resetBtn").addEventListener("click", () => {
+    if (!dirty || confirm("Clear the form? Unsaved changes will be lost.")) clearForm();
+  });
+
+  $("clearAllBtn").addEventListener("click", () => {
+    if (!confirm("Delete ALL stored records?")) return;
+    records = [];
+    saveToStorage();
+    renderTable();
+    setMsg("All stored data deleted.", "success");
+  });
+
+  $("exportBtn").addEventListener("click", () => {
+    if (!records.length) return setMsg("No records to export.", "error");
+
+    const headers = [
+      "SurveyYear","SurveyType","EVID","Form",
+      "First name","Middle Initial","Last name","Suffix",
+      "Address","Address 2","City","State","ZIP","ZIP4",
+      "Gender","GradYear","BirthMonth","BirthDay","BirthYear",
+      "GPA","Email","Mobile Phone","Teacher LastName",
+      "Q9","Q10","Q8","Q14",
+      "Q12A","Q12B","Q12C",
+      "Empty Column",
+      "Q7",
+      "Empty Column",
+      "Q15","Q16",
+      "Q17A","Q17B",
+      "Empty Column","Empty Column","Empty Column",
+      "Q18",
+      "Q11A","Q11B","Q11C",
+      "Q13A1","Q13A2","Q13A3",
+      "Q13B1","Q13B2","Q13B3",
+      "Q13C1","Q13C2","Q13C3",
+      "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
+      "Q20",
+      "Empty Column",
+      "Q1","Q2","Q3","Q4","Q5","Q6"
+    ];
+
+    const rows = records.map(r => ([
+      r.SurveyYear || "",
+      r.SurveyType || "",
+      r.EVID || "",
+      r.Form || "",
+
+      r.FirstName || "",
+      r.MiddleInitial || "",
+      r.LastName || "",
+      r.Suffix || "",
+
+      r.Address || "",
+      r.Address2 || "",
+      r.City || "",
+      r.State || "",
+      r.ZIP || "",
+      r.ZIP4 || "",
+
+      r.Gender || "",
+      r.GradYear || "",
+      r.BirthMonth || "",
+      r.BirthDay || "",
+      r.BirthYear || "",
+
+      r.GPA || "",
+      r.Email || "",
+      r.MobilePhone || "",
+      r.TeacherLastName || "",
+
+      r.Q9 || "",
+      r.Q10 || "",         // ✅ A/B comes here
+      r.Q8 || "",
+      r.Q14 || "",
+
+      r.Q12A || "",
+      r.Q12B || "",
+      r.Q12C || "",
+
+      "",
+      r.Q7 || "",
+      "",
+
+      r.Q15 || "",
+      r.Q16 || "",
+
+      r.Q17A || "",
+      r.Q17B || "",
+
+      "", "", "",
+
+      r.Q18 || "",
+
+      r.Q11A || "",
+      r.Q11B || "",
+      r.Q11C || "",
+
+      r.Q13A1 || "",
+      r.Q13A2 || "",
+      r.Q13A3 || "",
+
+      r.Q13B1 || "",
+      r.Q13B2 || "",
+      r.Q13B3 || "",
+
+      r.Q13C1 || "",
+      r.Q13C2 || "",
+      r.Q13C3 || "",
+
+      "", "", "", "", "", "",
+
+      r.Q20 || "",
+
+      "",
+
+      r.Q1 || "",
+      r.Q2 || "",
+      r.Q3 || "",
+      r.Q4 || "",
+      r.Q5 || "",
+      r.Q6 || ""
+    ]));
+
+    const aoa = [headers, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "T-STEM-EG-26");
+    XLSX.writeFile(wb, "T-STEM-EG-26.xlsx");
+  });
+
+  window.addEventListener("beforeunload", (e) => {
+    if (!dirty) return;
+    e.preventDefault();
+    e.returnValue = "";
+  });
+
+  init();
+</script>
+</body>
+</html>
