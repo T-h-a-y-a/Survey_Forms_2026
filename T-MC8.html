@@ -328,6 +328,33 @@
   let editIndex = -1;
   let dirty = false;
 
+  // ✅ NEW: Start/End time tracking (IST)
+  const IST_TZ = "Asia/Kolkata";
+  let sessionStartIST = ""; // set when user first types/changes anything in the form
+
+  function istNowString() {
+    const d = new Date();
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: IST_TZ,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).formatToParts(d);
+
+    const get = (t) => (parts.find(p => p.type === t)?.value || "");
+    // format: YYYY-MM-DD HH:mm:ss (IST)
+    return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}:${get("second")}`;
+  }
+
+  function ensureStartTime() {
+    if (sessionStartIST) return;
+    sessionStartIST = istNowString();
+  }
+
   function setMsg(text, type="") {
     const el = $("msg");
     el.textContent = text || "";
@@ -356,7 +383,7 @@
       input.type = "checkbox";
       input.name = name;
       input.value = opt;
-      input.addEventListener("change", () => { dirty = true; });
+      input.addEventListener("change", () => { ensureStartTime(); dirty = true; });
       label.appendChild(input);
       label.appendChild(document.createTextNode(opt));
       box.appendChild(label);
@@ -366,6 +393,7 @@
   function makeSingleSelectCheckboxGroup(name){
     document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
       cb.addEventListener("change", () => {
+        ensureStartTime();
         if (!cb.checked) return;
         document.querySelectorAll(`input[name="${name}"]`).forEach(other => {
           if (other !== cb) other.checked = false;
@@ -378,6 +406,7 @@
   function enforceMaxSelections(name, maxAllowed, friendlyLabel){
     document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
       cb.addEventListener("change", () => {
+        ensureStartTime();
         if (!cb.checked) return;
         const checked = [...document.querySelectorAll(`input[name="${name}"]:checked`)];
         if (checked.length > maxAllowed) {
@@ -407,7 +436,7 @@
     return "";
   }
 
-  // Q9: Yes/No -> A/B   ✅ (Your new rule)
+  // Q9: Yes/No -> A/B
   function yesNoToAB_fromCheckbox(name){
     const v = getCheckedValues(name)[0] || "";
     if (v === "Yes") return "A";
@@ -466,9 +495,10 @@
     enforceMaxSelections("Q4", 3, "Q4");
     enforceMaxSelections("Q13", 2, "Q13");
 
-    document.querySelectorAll("input,select,textarea").forEach(el => {
-      el.addEventListener("input", () => { dirty = true; });
-      el.addEventListener("change", () => { dirty = true; });
+    // ✅ Start time will be set on first user input/change in the form
+    document.querySelectorAll("#decaForm input, #decaForm select, #decaForm textarea").forEach(el => {
+      el.addEventListener("input", () => { ensureStartTime(); dirty = true; });
+      el.addEventListener("change", () => { ensureStartTime(); dirty = true; });
     });
 
     loadFromStorage();
@@ -535,7 +565,7 @@
     return "";
   }
 
-  function getFormData() {
+  function getFormData(endTimeIST) {
     const q4vals = getCheckedValues("Q4").slice(0,3);
     const q13vals = getCheckedValues("Q13").slice(0,2);
 
@@ -596,7 +626,6 @@
       Q7: getCheckedValues("Q7").join(","),
       Q8: getCheckedValues("Q8").join(","),
 
-      // ✅ Q9 must be A/B
       Q9: yesNoToAB_fromCheckbox("Q9"),
 
       Q10: getCheckedValues("Q10").join(","),
@@ -610,8 +639,11 @@
 
       Q15: $("Q15").value.trim(),
 
-      // ✅ Q16 must be Y/N
       Q16: yesNoToYN_fromCheckbox("Q16"),
+
+      // ✅ NEW: Start/End times in IST
+      StartTime: sessionStartIST || "",
+      EndTime: endTimeIST || "",
 
       _savedAt: new Date().toISOString()
     };
@@ -678,13 +710,13 @@
 
     setCheckedValues("Q14",(d.Q14||"").split(",").filter(Boolean));
 
-    // ✅ Q9 stored A/B -> show Yes/No checkbox
     setCheckedValues("Q9",  d.Q9 === "A" ? ["Yes"] : d.Q9 === "B" ? ["No"] : []);
-
-    // ✅ Q16 stored Y/N -> show Yes/No checkbox
     setCheckedValues("Q16", d.Q16 === "Y" ? ["Yes"] : d.Q16 === "N" ? ["No"] : []);
 
     $("Q15").value = d.Q15 || "";
+
+    // ✅ Keep existing StartTime when editing (so it doesn't reset)
+    sessionStartIST = d.StartTime || "";
 
     dirty = true;
   }
@@ -700,6 +732,9 @@
     $("submitBtn").textContent = "Submit";
     setMsg("");
     dirty = false;
+
+    // ✅ reset start time for a new entry
+    sessionStartIST = "";
   }
 
   function escapeHtml(s) {
@@ -770,12 +805,22 @@
 
   $("decaForm").addEventListener("submit", (e) => {
     e.preventDefault();
+
+    // ✅ ensure start time exists even if user only pasted or used autofill
+    ensureStartTime();
+
     const err = validate();
     if (err) return setMsg(err, "error");
 
-    const data = getFormData();
+    // ✅ End time at submit (IST)
+    const endIST = istNowString();
+    const data = getFormData(endIST);
 
     if (editIndex >= 0) {
+      // keep original StartTime if it exists in old record
+      const old = records[editIndex] || {};
+      data.StartTime = old.StartTime || data.StartTime;
+
       records[editIndex] = data;
       editIndex = -1;
       $("submitBtn").textContent = "Submit";
@@ -802,7 +847,7 @@
     setMsg("All stored data deleted.", "success");
   });
 
-  // ✅ EXPORT (Q9 now exports A/B, Q16 exports Y/N)
+  // ✅ EXPORT: StartTime + EndTime are added AFTER Parent/Guardian Email (IST)
   $("exportBtn").addEventListener("click", () => {
     if (!records.length) return setMsg("No records to export.", "error");
 
@@ -827,7 +872,9 @@
       "Q6C1","Q6C2","Q6C3",
       "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
       "Q16",
-      "Parent/Guardian Email"
+      "Parent/Guardian Email",
+      "StartTime (IST)",
+      "EndTime (IST)"
     ];
 
     const rows = records.map(r => ([
@@ -860,7 +907,7 @@
       r.TeacherLastName || "",
 
       r.Q7 || "",
-      r.Q9 || "",        // ✅ A/B
+      r.Q9 || "",
       r.Q3 || "",
       r.Q10 || "",
 
@@ -904,8 +951,10 @@
 
       "","","","","","",
 
-      r.Q16 || "",       // ✅ Y/N
-      r.ParentGuardianEmail || ""
+      r.Q16 || "",
+      r.ParentGuardianEmail || "",
+      r.StartTime || "",
+      r.EndTime || ""
     ]));
 
     const aoa = [headers, ...rows];
