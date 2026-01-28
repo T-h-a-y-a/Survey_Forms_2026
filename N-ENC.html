@@ -152,7 +152,6 @@
       </div>
     </fieldset>
 
-    <!-- ✅ QUESTIONS UPDATED AS PER YOUR LATEST RULES -->
     <fieldset>
       <legend>Questions</legend>
 
@@ -173,7 +172,6 @@
           <div id="Q3" class="checks cols-12"></div>
         </div>
 
-        <!-- ✅ NEW Q4 = OLD Q5 UI (3 fields, 2 chars each) -->
         <div class="checks-wrap">
           <label class="mini">Q4 (3 fields)</label>
           <div class="grid-3" style="margin-top:8px;">
@@ -183,7 +181,6 @@
           </div>
         </div>
 
-        <!-- ✅ NEW Q5 = OLD Q6 (College blocks) -->
         <fieldset>
           <legend>Q5</legend>
           <div class="grid">
@@ -282,6 +279,13 @@
   let editIndex = -1;
   let dirty = false;
 
+  // ✅ NEW: Start/End time tracking
+  let entryStartISO = ""; // when user first starts entering data for current form
+  function nowISO() { return new Date().toISOString(); }
+  function startEntryIfNeeded() {
+    if (!entryStartISO) entryStartISO = nowISO();
+  }
+
   function setMsg(text, type="") {
     const el = $("msg");
     el.textContent = text || "";
@@ -305,7 +309,10 @@
       input.type = "checkbox";
       input.name = name;
       input.value = opt;
-      input.addEventListener("change", () => { dirty = true; });
+      input.addEventListener("change", () => {
+        startEntryIfNeeded();   // ✅ NEW
+        dirty = true;
+      });
       label.appendChild(input);
       label.appendChild(document.createTextNode(opt));
       box.appendChild(label);
@@ -316,6 +323,7 @@
     document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
       cb.addEventListener("change", () => {
         if (!cb.checked) return;
+        startEntryIfNeeded();   // ✅ NEW
         document.querySelectorAll(`input[name="${name}"]`).forEach(other => {
           if (other !== cb) other.checked = false;
         });
@@ -392,8 +400,14 @@
     makeSingleSelectCheckboxGroup("Q9");
 
     document.querySelectorAll("input,select,textarea").forEach(el => {
-      el.addEventListener("input", () => { dirty = true; });
-      el.addEventListener("change", () => { dirty = true; });
+      el.addEventListener("input", () => {
+        startEntryIfNeeded();   // ✅ NEW
+        dirty = true;
+      });
+      el.addEventListener("change", () => {
+        startEntryIfNeeded();   // ✅ NEW
+        dirty = true;
+      });
     });
 
     loadFromStorage();
@@ -501,12 +515,10 @@
       Q2: yesNoToAB_fromCheckbox("Q2"),
       Q3: getCheckedValues("Q3").join(","),
 
-      // ✅ NEW Q4 = 3 fields (old Q5)
       Q4A: $("Q4A").value.trim().toUpperCase(),
       Q4B: $("Q4B").value.trim().toUpperCase(),
       Q4C: $("Q4C").value.trim().toUpperCase(),
 
-      // ✅ NEW Q5 = college blocks (old Q6)
       Q5A1: $("Q5A1").value.trim(),
       Q5A2: $("Q5A2").value.trim().toUpperCase(),
       Q5A3: yesNoToYN_fromSelect("Q5A3"),
@@ -524,6 +536,10 @@
       Q8: getCheckedValues("Q8").join(","),
 
       Q9: yesNoToYN_fromCheckbox("Q9"),
+
+      // ✅ NEW columns
+      StartTime: entryStartISO || "",
+      EndTime: "",
 
       _savedAt: new Date().toISOString()
     };
@@ -559,10 +575,7 @@
     $("TeacherLastName").value = d.TeacherLastName || "";
 
     setCheckedValues("Q1", (d.Q1||"").split(",").filter(Boolean));
-
-    // Q2 stored A/B -> show Yes/No
     setCheckedValues("Q2", d.Q2 === "A" ? ["Yes"] : d.Q2 === "B" ? ["No"] : []);
-
     setCheckedValues("Q3", (d.Q3||"").split(",").filter(Boolean));
 
     $("Q4A").value = d.Q4A || "";
@@ -584,9 +597,10 @@
     setCheckedValues("Q6", (d.Q6||"").split(",").filter(Boolean));
     setCheckedValues("Q7", (d.Q7||"").split(",").filter(Boolean));
     setCheckedValues("Q8", (d.Q8||"").split(",").filter(Boolean));
-
-    // Q9 stored Y/N -> show Yes/No
     setCheckedValues("Q9", d.Q9 === "Y" ? ["Yes"] : d.Q9 === "N" ? ["No"] : []);
+
+    // ✅ restore start time (keep original start for the record)
+    entryStartISO = d.StartTime || "";
 
     dirty = true;
   }
@@ -602,6 +616,9 @@
     $("submitBtn").textContent = "Submit";
     setMsg("");
     dirty = false;
+
+    // ✅ NEW: reset timer for next entry
+    entryStartISO = "";
   }
 
   function escapeHtml(s) {
@@ -675,9 +692,15 @@
     const err = validate();
     if (err) return setMsg(err, "error");
 
+    // ✅ if user somehow submits without typing, set start now
+    startEntryIfNeeded();
+
     const data = getFormData();
+    data.EndTime = nowISO(); // ✅ NEW: end time on submit
 
     if (editIndex >= 0) {
+      // keep original StartTime if it already exists (do not override)
+      data.StartTime = records[editIndex]?.StartTime || data.StartTime || entryStartISO || "";
       records[editIndex] = data;
       editIndex = -1;
       $("submitBtn").textContent = "Submit";
@@ -704,7 +727,6 @@
     setMsg("All stored data deleted.", "success");
   });
 
-  // ✅ EXPORT ORDER EXACTLY AS YOU GAVE
   $("exportBtn").addEventListener("click", () => {
     if (!records.length) return setMsg("No records to export.", "error");
 
@@ -714,6 +736,10 @@
       "Address","Address2","City","State","Zip","Zip4",
       "Gender","GradYear","BirthMonth","BirthDay","BirthYear",
       "GPA","Email","MobilePhone","TeacherLastName",
+
+      // ✅ NEW: Start/End time in Excel
+      "StartTime","EndTime",
+
       "Q1","Q2","Q7",
       "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
       "Q3",
@@ -759,8 +785,12 @@
       r.MobilePhone || "",
       r.TeacherLastName || "",
 
+      // ✅ NEW: export values
+      r.StartTime || "",
+      r.EndTime || "",
+
       r.Q1 || "",
-      r.Q2 || "",       // ✅ A/B
+      r.Q2 || "",
       r.Q7 || "",
 
       "","","","","",
@@ -781,19 +811,19 @@
 
       r.Q5A1 || "",
       r.Q5A2 || "",
-      r.Q5A3 || "",      // ✅ Y/N
+      r.Q5A3 || "",
 
       r.Q5B1 || "",
       r.Q5B2 || "",
-      r.Q5B3 || "",      // ✅ Y/N
+      r.Q5B3 || "",
 
       r.Q5C1 || "",
       r.Q5C2 || "",
-      r.Q5C3 || "",      // ✅ Y/N
+      r.Q5C3 || "",
 
       "","","","","","",
 
-      r.Q9 || "",        // ✅ Y/N
+      r.Q9 || "",
       r.ParentGuardianEmail || ""
     ]));
 
