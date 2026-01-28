@@ -279,36 +279,38 @@
   let editIndex = -1;
   let dirty = false;
 
-  // ✅ NEW: Start/End time tracking
-  let entryStartISO = "";
-  unction nowIST() {
-  // Example: "2026-01-28 09:15:30 IST"
-  const d = new Date();
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Kolkata",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false
-  }).formatToParts(d);
+  // ✅ Start/End time tracking (IST)
+  let entryStartIST = "";
 
-  const get = (type) => parts.find(p => p.type === type)?.value || "";
-  const yyyy = get("year");
-  const mm   = get("month");
-  const dd   = get("day");
-  const hh   = get("hour");
-  const mi   = get("minute");
-  const ss   = get("second");
+  function nowIST() {
+    // Example: "2026-01-28 09:15:30 IST"
+    const d = new Date();
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).formatToParts(d);
 
-  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss} IST`;
-}
+    const get = (type) => parts.find(p => p.type === type)?.value || "";
+    const yyyy = get("year");
+    const mm   = get("month");
+    const dd   = get("day");
+    const hh   = get("hour");
+    const mi   = get("minute");
+    const ss   = get("second");
+
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss} IST`;
+  }
 
   function startEntryIfNeeded() {
-  if (!entryStartISO) entryStartISO = nowIST();
-}
+    if (!entryStartIST) entryStartIST = nowIST();
+  }
+
   function setMsg(text, type="") {
     const el = $("msg");
     el.textContent = text || "";
@@ -421,14 +423,8 @@
     makeSingleSelectCheckboxGroup("Q9");
 
     document.querySelectorAll("input,select,textarea").forEach(el => {
-      el.addEventListener("input", () => {
-        startEntryIfNeeded();
-        dirty = true;
-      });
-      el.addEventListener("change", () => {
-        startEntryIfNeeded();
-        dirty = true;
-      });
+      el.addEventListener("input", () => { startEntryIfNeeded(); dirty = true; });
+      el.addEventListener("change", () => { startEntryIfNeeded(); dirty = true; });
     });
 
     loadFromStorage();
@@ -552,11 +548,10 @@
 
       Q9: yesNoToYN_fromCheckbox("Q9"),
 
-      // ✅ NEW fields (will export at END)
-      StartTime: entryStartISO || "",
+      StartTime: entryStartIST || "",
       EndTime: "",
 
-      _savedAt: new Date().toISOString()
+      _savedAt: nowIST()
     };
   }
 
@@ -614,9 +609,7 @@
     setCheckedValues("Q8", (d.Q8||"").split(",").filter(Boolean));
     setCheckedValues("Q9", d.Q9 === "Y" ? ["Yes"] : d.Q9 === "N" ? ["No"] : []);
 
-    // ✅ restore existing start time if editing
-    entryStartISO = d.StartTime || "";
-
+    entryStartIST = d.StartTime || "";
     dirty = true;
   }
 
@@ -632,7 +625,7 @@
     setMsg("");
     dirty = false;
 
-    entryStartISO = "";
+    entryStartIST = "";
   }
 
   function escapeHtml(s) {
@@ -706,14 +699,13 @@
     const err = validate();
     if (err) return setMsg(err, "error");
 
-    // if submitted without typing, set start time now
     startEntryIfNeeded();
 
     const data = getFormData();
     data.EndTime = nowIST();
 
     if (editIndex >= 0) {
-      data.StartTime = records[editIndex]?.StartTime || data.StartTime || entryStartISO || "";
+      data.StartTime = records[editIndex]?.StartTime || data.StartTime || entryStartIST || "";
       records[editIndex] = data;
       editIndex = -1;
       $("submitBtn").textContent = "Submit";
@@ -740,108 +732,102 @@
     setMsg("All stored data deleted.", "success");
   });
 
-  // ✅ EXPORT: StartTime/EndTime moved to END of headers
+  // ✅ EXPORT: Parent/Guardian Email -> EndTime -> StartTime
   $("exportBtn").addEventListener("click", () => {
     if (!records.length) return setMsg("No records to export.", "error");
 
     const headers = [
-  "SurveyYear","SurveyType","EVID","Form",
-  "FirstName","MiddleInitial","LastName","Suffix",
-  "Address","Address2","City","State","Zip","Zip4",
-  "Gender","GradYear","BirthMonth","BirthDay","BirthYear",
-  "GPA","Email","MobilePhone","TeacherLastName",
-  "Q1","Q2","Q7",
-  "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
-  "Q3",
-  "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
-  "Q6",
-  "Empty Column",
-  "Q8",
-  "Q4A","Q4B","Q4C",
-  "Q5A1","Q5A2","Q5A3",
-  "Q5B1","Q5B2","Q5B3",
-  "Q5C1","Q5C2","Q5C3",
-  "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
-  "Q9",
-  "Parent/Guardian Email",
-
-  // ✅ NOW EndTime comes immediately after Parent/Guardian Email
-  "EndTime",
-  "StartTime"
-];
-
+      "SurveyYear","SurveyType","EVID","Form",
+      "FirstName","MiddleInitial","LastName","Suffix",
+      "Address","Address2","City","State","Zip","Zip4",
+      "Gender","GradYear","BirthMonth","BirthDay","BirthYear",
+      "GPA","Email","MobilePhone","TeacherLastName",
+      "Q1","Q2","Q7",
+      "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
+      "Q3",
+      "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
+      "Q6",
+      "Empty Column",
+      "Q8",
+      "Q4A","Q4B","Q4C",
+      "Q5A1","Q5A2","Q5A3",
+      "Q5B1","Q5B2","Q5B3",
+      "Q5C1","Q5C2","Q5C3",
+      "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
+      "Q9",
+      "Parent/Guardian Email",
+      "EndTime",
+      "StartTime"
+    ];
 
     const rows = records.map(r => ([
-  r.SurveyYear || "",
-  r.SurveyType || "",
-  r.EVID || "",
-  r.Form || "",
+      r.SurveyYear || "",
+      r.SurveyType || "",
+      r.EVID || "",
+      r.Form || "",
 
-  r.FirstName || "",
-  r.MiddleInitial || "",
-  r.LastName || "",
-  r.Suffix || "",
+      r.FirstName || "",
+      r.MiddleInitial || "",
+      r.LastName || "",
+      r.Suffix || "",
 
-  r.Address || "",
-  r.Address2 || "",
-  r.City || "",
-  r.State || "",
-  r.ZIP || "",
-  r.ZIP4 || "",
+      r.Address || "",
+      r.Address2 || "",
+      r.City || "",
+      r.State || "",
+      r.ZIP || "",
+      r.ZIP4 || "",
 
-  r.Gender || "",
-  r.GradYear || "",
-  r.BirthMonth || "",
-  r.BirthDay || "",
-  r.BirthYear || "",
+      r.Gender || "",
+      r.GradYear || "",
+      r.BirthMonth || "",
+      r.BirthDay || "",
+      r.BirthYear || "",
 
-  r.GPA || "",
-  r.Email || "",
-  r.MobilePhone || "",
-  r.TeacherLastName || "",
+      r.GPA || "",
+      r.Email || "",
+      r.MobilePhone || "",
+      r.TeacherLastName || "",
 
-  r.Q1 || "",
-  r.Q2 || "",
-  r.Q7 || "",
+      r.Q1 || "",
+      r.Q2 || "",
+      r.Q7 || "",
 
-  "","","","","",
+      "","","","","",
 
-  r.Q3 || "",
+      r.Q3 || "",
 
-  "","","","","","",
+      "","","","","","",
 
-  r.Q6 || "",
+      r.Q6 || "",
 
-  "",
+      "",
 
-  r.Q8 || "",
+      r.Q8 || "",
 
-  r.Q4A || "",
-  r.Q4B || "",
-  r.Q4C || "",
+      r.Q4A || "",
+      r.Q4B || "",
+      r.Q4C || "",
 
-  r.Q5A1 || "",
-  r.Q5A2 || "",
-  r.Q5A3 || "",
+      r.Q5A1 || "",
+      r.Q5A2 || "",
+      r.Q5A3 || "",
 
-  r.Q5B1 || "",
-  r.Q5B2 || "",
-  r.Q5B3 || "",
+      r.Q5B1 || "",
+      r.Q5B2 || "",
+      r.Q5B3 || "",
 
-  r.Q5C1 || "",
-  r.Q5C2 || "",
-  r.Q5C3 || "",
+      r.Q5C1 || "",
+      r.Q5C2 || "",
+      r.Q5C3 || "",
 
-  "","","","","","",
+      "","","","","","",
 
-  r.Q9 || "",
-  r.ParentGuardianEmail || "",
-
-  // ✅ EndTime next to Parent/Guardian Email
-  r.EndTime || "",
-  r.StartTime || ""
-]));
-
+      r.Q9 || "",
+      r.ParentGuardianEmail || "",
+      r.EndTime || "",
+      r.StartTime || ""
+    ]));
 
     const aoa = [headers, ...rows];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -860,5 +846,3 @@
 </script>
 </body>
 </html>
-
-
