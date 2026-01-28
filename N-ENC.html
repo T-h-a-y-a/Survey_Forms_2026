@@ -280,7 +280,7 @@
   let dirty = false;
 
   // ✅ NEW: Start/End time tracking
-  let entryStartISO = ""; // when user first starts entering data for current form
+  let entryStartISO = "";
   function nowISO() { return new Date().toISOString(); }
   function startEntryIfNeeded() {
     if (!entryStartISO) entryStartISO = nowISO();
@@ -310,7 +310,7 @@
       input.name = name;
       input.value = opt;
       input.addEventListener("change", () => {
-        startEntryIfNeeded();   // ✅ NEW
+        startEntryIfNeeded();
         dirty = true;
       });
       label.appendChild(input);
@@ -323,7 +323,7 @@
     document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
       cb.addEventListener("change", () => {
         if (!cb.checked) return;
-        startEntryIfNeeded();   // ✅ NEW
+        startEntryIfNeeded();
         document.querySelectorAll(`input[name="${name}"]`).forEach(other => {
           if (other !== cb) other.checked = false;
         });
@@ -341,7 +341,6 @@
     document.querySelectorAll(`input[name="${name}"]`).forEach(i => i.checked = set.has(i.value));
   }
 
-  // Q2: Yes/No -> A/B
   function yesNoToAB_fromCheckbox(name){
     const v = getCheckedValues(name)[0] || "";
     if (v === "Yes") return "A";
@@ -349,7 +348,6 @@
     return "";
   }
 
-  // Q9: Yes/No -> Y/N
   function yesNoToYN_fromCheckbox(name){
     const v = getCheckedValues(name)[0] || "";
     if (v === "Yes") return "Y";
@@ -401,11 +399,11 @@
 
     document.querySelectorAll("input,select,textarea").forEach(el => {
       el.addEventListener("input", () => {
-        startEntryIfNeeded();   // ✅ NEW
+        startEntryIfNeeded();
         dirty = true;
       });
       el.addEventListener("change", () => {
-        startEntryIfNeeded();   // ✅ NEW
+        startEntryIfNeeded();
         dirty = true;
       });
     });
@@ -418,11 +416,7 @@
     setMsg("");
 
     upperTrim("State");
-
-    // Q4 (2 chars each)
     upperTrim("Q4A"); upperTrim("Q4B"); upperTrim("Q4C");
-
-    // Q5 state codes
     upperTrim("Q5A2"); upperTrim("Q5B2"); upperTrim("Q5C2");
 
     const evid = $("EVID").value.trim();
@@ -464,13 +458,11 @@
       if (!Number.isInteger(n) || n < 2006 || n > 2013) return "BirthYear must be between 2006 and 2013.";
     }
 
-    // Q4 fields validation
     for (const id of ["Q4A","Q4B","Q4C"]) {
       const v = ($(id)?.value || "").trim();
       if (v && !isExactLen(v, 2)) return `${id} must be exactly 2 characters.`;
     }
 
-    // Q5 state codes validation
     for (const id of ["Q5A2","Q5B2","Q5C2"]) {
       const v = ($(id)?.value || "").trim();
       if (v && !isExactLen(v, 2)) return `${id} must be exactly 2 characters.`;
@@ -537,7 +529,7 @@
 
       Q9: yesNoToYN_fromCheckbox("Q9"),
 
-      // ✅ NEW columns
+      // ✅ NEW fields (will export at END)
       StartTime: entryStartISO || "",
       EndTime: "",
 
@@ -599,7 +591,7 @@
     setCheckedValues("Q8", (d.Q8||"").split(",").filter(Boolean));
     setCheckedValues("Q9", d.Q9 === "Y" ? ["Yes"] : d.Q9 === "N" ? ["No"] : []);
 
-    // ✅ restore start time (keep original start for the record)
+    // ✅ restore existing start time if editing
     entryStartISO = d.StartTime || "";
 
     dirty = true;
@@ -617,7 +609,6 @@
     setMsg("");
     dirty = false;
 
-    // ✅ NEW: reset timer for next entry
     entryStartISO = "";
   }
 
@@ -692,14 +683,13 @@
     const err = validate();
     if (err) return setMsg(err, "error");
 
-    // ✅ if user somehow submits without typing, set start now
+    // if submitted without typing, set start time now
     startEntryIfNeeded();
 
     const data = getFormData();
-    data.EndTime = nowISO(); // ✅ NEW: end time on submit
+    data.EndTime = nowISO();
 
     if (editIndex >= 0) {
-      // keep original StartTime if it already exists (do not override)
       data.StartTime = records[editIndex]?.StartTime || data.StartTime || entryStartISO || "";
       records[editIndex] = data;
       editIndex = -1;
@@ -727,6 +717,7 @@
     setMsg("All stored data deleted.", "success");
   });
 
+  // ✅ EXPORT: StartTime/EndTime moved to END of headers
   $("exportBtn").addEventListener("click", () => {
     if (!records.length) return setMsg("No records to export.", "error");
 
@@ -736,10 +727,6 @@
       "Address","Address2","City","State","Zip","Zip4",
       "Gender","GradYear","BirthMonth","BirthDay","BirthYear",
       "GPA","Email","MobilePhone","TeacherLastName",
-
-      // ✅ NEW: Start/End time in Excel
-      "StartTime","EndTime",
-
       "Q1","Q2","Q7",
       "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
       "Q3",
@@ -753,7 +740,10 @@
       "Q5C1","Q5C2","Q5C3",
       "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
       "Q9",
-      "Parent/Guardian Email"
+      "Parent/Guardian Email",
+
+      // ✅ NEW: at the END
+      "StartTime","EndTime"
     ];
 
     const rows = records.map(r => ([
@@ -784,10 +774,6 @@
       r.Email || "",
       r.MobilePhone || "",
       r.TeacherLastName || "",
-
-      // ✅ NEW: export values
-      r.StartTime || "",
-      r.EndTime || "",
 
       r.Q1 || "",
       r.Q2 || "",
@@ -824,7 +810,11 @@
       "","","","","","",
 
       r.Q9 || "",
-      r.ParentGuardianEmail || ""
+      r.ParentGuardianEmail || "",
+
+      // ✅ NEW: at END
+      r.StartTime || "",
+      r.EndTime || ""
     ]));
 
     const aoa = [headers, ...rows];
