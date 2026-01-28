@@ -59,7 +59,6 @@
 
     .birth-row { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 12px; }
 
-    /* Questions one-per-row */
     .qgrid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 
     @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, 1fr);} }
@@ -296,6 +295,10 @@
   let editIndex = -1;
   let dirty = false;
 
+  // ✅ Start/End tracking (IST)
+  let currentStartTimeIST = "";
+  let currentEndTimeIST = "";
+
   function setMsg(text, type="") {
     const el = $("msg");
     el.textContent = text || "";
@@ -367,7 +370,6 @@
     document.querySelectorAll(`input[name="${name}"]`).forEach(i => i.checked = set.has(i.value));
   }
 
-  // ✅ Q19: Yes/No -> Y/N
   function yesNoToYN_fromCheckbox(name){
     const v = getCheckedValues(name)[0] || "";
     if (v === "Yes") return "Y";
@@ -375,7 +377,6 @@
     return "";
   }
 
-  // ✅ Q6: Yes/No -> A/B
   function yesNoToAB_fromCheckbox(name){
     const v = getCheckedValues(name)[0] || "";
     if (v === "Yes") return "A";
@@ -395,6 +396,34 @@
     if (el) el.value = (el.value || "").trim().toUpperCase();
   }
   function isExactLen(val, len) { return (val ?? "").length === len; }
+
+  // ✅ IST formatter: YYYY-MM-DD HH:mm:ss
+  function nowISTString() {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).formatToParts(new Date());
+
+    const get = (t) => (parts.find(p => p.type === t)?.value || "");
+    const yyyy = get("year");
+    const mm = get("month");
+    const dd = get("day");
+    const hh = get("hour");
+    const mi = get("minute");
+    const ss = get("second");
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+  }
+
+  // ✅ capture StartTime when user first types/changes anything
+  function maybeCaptureStartTime() {
+    if (!currentStartTimeIST) currentStartTimeIST = nowISTString();
+  }
 
   function loadFromStorage() {
     try {
@@ -441,9 +470,10 @@
     makeCheckboxGroup("Q19", "Q19", ["Yes","No"]);
     makeSingleSelectCheckboxGroup("Q19");
 
+    // ✅ On any interaction: mark dirty + capture StartTime once
     document.querySelectorAll("input,select,textarea").forEach(el => {
-      el.addEventListener("input", () => { dirty = true; });
-      el.addEventListener("change", () => { dirty = true; });
+      el.addEventListener("input", () => { dirty = true; maybeCaptureStartTime(); });
+      el.addEventListener("change", () => { dirty = true; maybeCaptureStartTime(); });
     });
 
     loadFromStorage();
@@ -508,9 +538,15 @@
     return "";
   }
 
-  function getFormData() {
+  function getFormData(existingStartTime = "") {
     const q14vals = getCheckedValues("Q14").slice(0, 3);
     const q16vals = getCheckedValues("Q16").slice(0, 2);
+
+    // ✅ Ensure start time exists (if user pasted then directly submits)
+    const startTime = existingStartTime || currentStartTimeIST || nowISTString();
+    const endTime = nowISTString();
+
+    currentEndTimeIST = endTime;
 
     return {
       SurveyYear: "2026",
@@ -550,7 +586,6 @@
       Q4: getCheckedValues("Q4").join(","),
       Q5: getCheckedValues("Q5").join(","),
 
-      // ✅ Q6 stored as A/B
       Q6: yesNoToAB_fromCheckbox("Q6"),
 
       Q7: getCheckedValues("Q7").join(","),
@@ -598,8 +633,11 @@
       Q17: getCheckedValues("Q17").join(","),
       Q18: $("Q18").value.trim(),
 
-      // ✅ Q19 stored as Y/N
       Q19: yesNoToYN_fromCheckbox("Q19"),
+
+      // ✅ NEW: Start/End times in IST
+      StartTime: startTime,
+      EndTime: endTime,
 
       _savedAt: new Date().toISOString()
     };
@@ -641,7 +679,6 @@
     setCheckedValues("Q4", (d.Q4||"").split(",").filter(Boolean));
     setCheckedValues("Q5", (d.Q5||"").split(",").filter(Boolean));
 
-    // ✅ Q6 stored A/B -> show Yes/No
     setCheckedValues("Q6", d.Q6 === "A" ? ["Yes"] : d.Q6 === "B" ? ["No"] : []);
 
     setCheckedValues("Q7", (d.Q7||"").split(",").filter(Boolean));
@@ -683,11 +720,12 @@
     setCheckedValues("Q16", q16Set.length ? q16Set : (d.Q16||"").split(",").filter(Boolean).slice(0,2));
 
     setCheckedValues("Q17",(d.Q17||"").split(",").filter(Boolean));
-
     $("Q18").value = d.Q18 || "";
-
-    // ✅ Q19 stored Y/N -> show Yes/No
     setCheckedValues("Q19", d.Q19 === "Y" ? ["Yes"] : d.Q19 === "N" ? ["No"] : []);
+
+    // ✅ restore record times when editing
+    currentStartTimeIST = d.StartTime || "";
+    currentEndTimeIST = d.EndTime || "";
 
     dirty = true;
   }
@@ -704,6 +742,10 @@
     $("submitBtn").textContent = "Submit";
     setMsg("");
     dirty = false;
+
+    // ✅ reset new record timing
+    currentStartTimeIST = "";
+    currentEndTimeIST = "";
   }
 
   function escapeHtml(s) {
@@ -777,7 +819,9 @@
     const err = validate();
     if (err) return setMsg(err, "error");
 
-    const data = getFormData();
+    // ✅ EndTime captured on submit/update; StartTime kept if editing
+    const existingStart = (editIndex >= 0 && records[editIndex] && records[editIndex].StartTime) ? records[editIndex].StartTime : "";
+    const data = getFormData(existingStart);
 
     if (editIndex >= 0) {
       records[editIndex] = data;
@@ -806,7 +850,7 @@
     setMsg("All stored data deleted.", "success");
   });
 
-  // ✅ EXPORT: Q6 exports A/B, Q19 exports Y/N (FIXED)
+  // ✅ EXPORT: Add StartTime + EndTime AFTER Q4 (as requested)
   $("exportBtn").addEventListener("click", () => {
     if (!records.length) return setMsg("No records to export.", "error");
 
@@ -828,7 +872,8 @@
       "Q13D1","Q13D2","Q13D3",
       "Q13E1","Q13E2","Q13E3",
       "Q19","Empty Column",
-      "Q1.1","Q1.2","Q2","Q3","Q4"
+      "Q1.1","Q1.2","Q2","Q3","Q4",
+      "StartTime","EndTime"   // ✅ AFTER Q4
     ];
 
     const rows = records.map(r => ([
@@ -862,7 +907,7 @@
       r.TeacherLastName || "",
 
       r.Q5 || "",
-      r.Q6 || "",          // ✅ A/B
+      r.Q6 || "",
       r.Q7 || "",
       r.Q8 || "",
 
@@ -872,7 +917,7 @@
 
       r.Q10 || "",
       r.Q15 || "",
-      "",                   // Empty Column
+      "",
 
       r.Q9 || "",
       r.Q11 || "",
@@ -880,7 +925,7 @@
       r.Q16A || "",
       r.Q16B || "",
 
-      "", "", "",           // Empty Column x3
+      "", "", "",
 
       r.Q17 || "",
       r.Q12A || "",
@@ -907,14 +952,17 @@
       r.Q13E2 || "",
       r.Q13E3 || "",
 
-      r.Q19 || "",          // ✅ FIXED: Q19 now exports Y/N
-      "",                   // Empty Column
+      r.Q19 || "",
+      "",
 
       r.Q1_1 || "",
       r.Q1_2 || "",
       r.Q2 || "",
       r.Q3 || "",
-      r.Q4 || ""
+      r.Q4 || "",
+
+      r.StartTime || "",   // ✅ AFTER Q4
+      r.EndTime || ""      // ✅ AFTER Q4
     ]));
 
     const aoa = [headers, ...rows];
@@ -934,4 +982,3 @@
 </script>
 </body>
 </html>
-
