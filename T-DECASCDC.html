@@ -14,7 +14,7 @@
     form { background: #fff; border: 1px solid var(--bd); border-radius: 10px; padding: 14px; }
     fieldset { border: 1px solid var(--bd); border-radius: 10px; padding: 12px; margin: 0 0 14px; }
     legend { padding: 0 8px; font-weight: 700; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); } /* ✅ removed stray 7 */
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
     .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap); }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
     .full { grid-column: 1 / -1; }
@@ -386,10 +386,37 @@
   // used for "keep only 3" selection ordering
   let _selCounter = 0;
 
+  // ✅ Start time captured on FIRST typing/clicking inside any input/select/textarea (IST)
+  let sessionStartIST = "";
+
   function setMsg(text, type="") {
     const el = $("msg");
     el.textContent = text || "";
     el.className = "msg " + (type || "");
+  }
+
+  // ✅ IST time string (Asia/Kolkata) => "YYYY-MM-DD HH:mm:ss IST"
+  function nowISTString() {
+    const d = new Date();
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).formatToParts(d);
+
+    const map = {};
+    parts.forEach(p => { if (p.type !== "literal") map[p.type] = p.value; });
+
+    return `${map.year}-${map.month}-${map.day} ${map.hour}:${map.minute}:${map.second} IST`;
+  }
+
+  function ensureStartTime() {
+    if (!sessionStartIST) sessionStartIST = nowISTString();
   }
 
   function alphaRange(startChar, endChar) {
@@ -414,7 +441,7 @@
       input.type = "checkbox";
       input.name = name;
       input.value = opt;
-      input.addEventListener("change", () => { dirty = true; });
+      input.addEventListener("change", () => { dirty = true; ensureStartTime(); });
       label.appendChild(input);
       label.appendChild(document.createTextNode(opt));
       box.appendChild(label);
@@ -424,6 +451,7 @@
   function makeSingleSelectCheckboxGroup(name){
     document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
       cb.addEventListener("change", () => {
+        ensureStartTime();
         if (!cb.checked) return;
         document.querySelectorAll(`input[name="${name}"]`).forEach(other => {
           if (other !== cb) other.checked = false;
@@ -434,10 +462,10 @@
   }
 
   // ✅ Keep only maxAllowed checks; if user selects 4th, it replaces the most recently selected OLD one.
-  // Example: 1,3,5 then select 55 => becomes 1,3,55 (drops 5)
   function makeMaxSelectCheckboxGroup(name, maxAllowed = 3) {
     document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
       cb.addEventListener("change", () => {
+        ensureStartTime();
         if (!cb.checked) return;
 
         cb.dataset.sel = String(++_selCounter);
@@ -540,9 +568,14 @@
 
     makeMaxSelectCheckboxGroup("Q10", 3);
 
+    // ✅ Any user interaction will set start time once (IST)
     document.querySelectorAll("input,select,textarea").forEach(el => {
-      el.addEventListener("input", () => { dirty = true; });
-      el.addEventListener("change", () => { dirty = true; });
+      el.addEventListener("focus", () => { ensureStartTime(); });
+      el.addEventListener("input", () => { dirty = true; ensureStartTime(); });
+      el.addEventListener("change", () => { dirty = true; ensureStartTime(); });
+      el.addEventListener("keydown", () => { ensureStartTime(); });
+      el.addEventListener("mousedown", () => { ensureStartTime(); });
+      el.addEventListener("touchstart", () => { ensureStartTime(); }, {passive:true});
     });
 
     loadFromStorage();
@@ -608,7 +641,8 @@
     return "";
   }
 
-  function getFormData() {
+  // ✅ endTime passed from submit/update; startTime captured once (IST)
+  function getFormData(endTimeIST) {
     const q10vals = getCheckedValues("Q10"); // already limited to 3 by handler
 
     return {
@@ -671,6 +705,11 @@
 
       // ✅ Q16 stays Y/N
       Q16: yesNoToYN_fromCheckbox("Q16"),
+
+      // ✅ NEW: start/end time in IST
+      StartTime: sessionStartIST || "",
+      EndTime: endTimeIST || "",
+
       _savedAt: new Date().toISOString()
     };
   }
@@ -742,6 +781,9 @@
     $("Q15C2").value = d.Q15C2 || "";
     $("Q15C3").value = d.Q15C3 === "Y" ? "Yes" : d.Q15C3 === "N" ? "No" : "";
 
+    // ✅ Load start time from record into session, so update keeps same StartTime unless new session
+    sessionStartIST = d.StartTime || "";
+
     dirty = true;
   }
 
@@ -755,7 +797,11 @@
     editIndex = -1;
     $("submitBtn").textContent = "Submit";
     setMsg("");
+
     dirty = false;
+
+    // ✅ reset timer for new entry
+    sessionStartIST = "";
   }
 
   function escapeHtml(s) {
@@ -831,9 +877,15 @@
     const err = validate();
     if (err) return setMsg(err, "error");
 
-    const data = getFormData();
+    // ✅ Start time (first typing), End time (submit) in IST
+    ensureStartTime();
+    const endIST = nowISTString();
+
+    const data = getFormData(endIST);
 
     if (editIndex >= 0) {
+      // keep same StartTime if already present; but if record didn't have it, use current
+      data.StartTime = records[editIndex]?.StartTime || data.StartTime;
       records[editIndex] = data;
       editIndex = -1;
       $("submitBtn").textContent = "Submit";
@@ -860,7 +912,7 @@
     setMsg("All stored data deleted.", "success");
   });
 
-  // ✅ Excel export with exact column order + empty columns + Q10A/Q10B/Q10C
+  // ✅ Excel export: add StartTime + EndTime AFTER Q4 (at the end, because Q4 is last)
   $("exportBtn").addEventListener("click", () => {
     if (!records.length) return setMsg("No records to export.", "error");
 
@@ -873,7 +925,9 @@
       "", "", "", "", "",  // 5 Empty columns
       "Q13","Q14A","Q14B","Q14C","Q15A1","Q15A2","Q15A3","Q15B1","Q15B2","Q15B3","Q15C1","Q15C2","Q15C3",
       "", "", "", "", "", "", // 6 Empty columns
-      "Q16","", "Q1","Q2","Q3","Q4"
+      "Q16","", "Q1","Q2","Q3","Q4",
+      // ✅ NEW columns right AFTER Q4
+      "StartTime","EndTime"
     ];
 
     const aoa = [headers];
@@ -909,7 +963,6 @@
         r.MobilePhone || "",
         r.TeacherLastName || "",
         r.Q5 || "",
-        // ✅ Q7 already stored as A/B, so Excel will show A/B
         r.Q7 || "",
         r.Q8 || "",
         r.Q6 || "",
@@ -939,7 +992,10 @@
         r.Q1 || "",
         r.Q2 || "",
         r.Q3 || "",
-        r.Q4 || ""
+        r.Q4 || "",
+        // ✅ Start/End time (IST)
+        r.StartTime || "",
+        r.EndTime || ""
       ]);
     });
 
