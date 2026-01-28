@@ -722,100 +722,103 @@
     if (!records.length) return setMsg("No records to export.", "error");
 
     const headers = [
-      "SurveyYear","SurveyType","EVID","Form",
-      "FirstName","MiddleInitial","LastName","Suffix",
-      "Address","Address2","City","State","Zip","Zip4",
-      "Gender","GradYear","BirthMonth","BirthDay","BirthYear",
-      "GPA","Email","MobilePhone","TeacherLastName",
-      "Q1","Q2","Q7",
-      "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
-      "Q3",
-      "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
-      "Q6",
-      "Empty Column",
-      "Q8",
-      "Q4A","Q4B","Q4C",
-      "Q5A1","Q5A2","Q5A3",
-      "Q5B1","Q5B2","Q5B3",
-      "Q5C1","Q5C2","Q5C3",
-      "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
-      "Q9",
-      "Parent/Guardian Email",
+  "SurveyYear","SurveyType","EVID","Form",
+  "FirstName","MiddleInitial","LastName","Suffix",
+  "Address","Address2","City","State","Zip","Zip4",
+  "Gender","GradYear","BirthMonth","BirthDay","BirthYear",
+  "GPA","Email","MobilePhone","TeacherLastName",
+  "Q1","Q2","Q7",
+  "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
+  "Q3",
+  "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
+  "Q6",
+  "Empty Column",
+  "Q8",
+  "Q4A","Q4B","Q4C",
+  "Q5A1","Q5A2","Q5A3",
+  "Q5B1","Q5B2","Q5B3",
+  "Q5C1","Q5C2","Q5C3",
+  "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
+  "Q9",
+  "Parent/Guardian Email",
 
-      // ✅ NEW: at the END
-      "StartTime","EndTime"
-    ];
+  // ✅ NOW EndTime comes immediately after Parent/Guardian Email
+  "EndTime",
+  "StartTime"
+];
+
 
     const rows = records.map(r => ([
-      r.SurveyYear || "",
-      r.SurveyType || "",
-      r.EVID || "",
-      r.Form || "",
+  r.SurveyYear || "",
+  r.SurveyType || "",
+  r.EVID || "",
+  r.Form || "",
 
-      r.FirstName || "",
-      r.MiddleInitial || "",
-      r.LastName || "",
-      r.Suffix || "",
+  r.FirstName || "",
+  r.MiddleInitial || "",
+  r.LastName || "",
+  r.Suffix || "",
 
-      r.Address || "",
-      r.Address2 || "",
-      r.City || "",
-      r.State || "",
-      r.ZIP || "",
-      r.ZIP4 || "",
+  r.Address || "",
+  r.Address2 || "",
+  r.City || "",
+  r.State || "",
+  r.ZIP || "",
+  r.ZIP4 || "",
 
-      r.Gender || "",
-      r.GradYear || "",
-      r.BirthMonth || "",
-      r.BirthDay || "",
-      r.BirthYear || "",
+  r.Gender || "",
+  r.GradYear || "",
+  r.BirthMonth || "",
+  r.BirthDay || "",
+  r.BirthYear || "",
 
-      r.GPA || "",
-      r.Email || "",
-      r.MobilePhone || "",
-      r.TeacherLastName || "",
+  r.GPA || "",
+  r.Email || "",
+  r.MobilePhone || "",
+  r.TeacherLastName || "",
 
-      r.Q1 || "",
-      r.Q2 || "",
-      r.Q7 || "",
+  r.Q1 || "",
+  r.Q2 || "",
+  r.Q7 || "",
 
-      "","","","","",
+  "","","","","",
 
-      r.Q3 || "",
+  r.Q3 || "",
 
-      "","","","","","",
+  "","","","","","",
 
-      r.Q6 || "",
+  r.Q6 || "",
 
-      "",
+  "",
 
-      r.Q8 || "",
+  r.Q8 || "",
 
-      r.Q4A || "",
-      r.Q4B || "",
-      r.Q4C || "",
+  r.Q4A || "",
+  r.Q4B || "",
+  r.Q4C || "",
 
-      r.Q5A1 || "",
-      r.Q5A2 || "",
-      r.Q5A3 || "",
+  r.Q5A1 || "",
+  r.Q5A2 || "",
+  r.Q5A3 || "",
 
-      r.Q5B1 || "",
-      r.Q5B2 || "",
-      r.Q5B3 || "",
+  r.Q5B1 || "",
+  r.Q5B2 || "",
+  r.Q5B3 || "",
 
-      r.Q5C1 || "",
-      r.Q5C2 || "",
-      r.Q5C3 || "",
+  r.Q5C1 || "",
+  r.Q5C2 || "",
+  r.Q5C3 || "",
 
-      "","","","","","",
+  "","","","","","",
 
-      r.Q9 || "",
-      r.ParentGuardianEmail || "",
+  r.Q9 || "",
+  r.ParentGuardianEmail || "",
 
-      // ✅ NEW: at END
-      r.StartTime || "",
-      r.EndTime || ""
-    ]));
+  // ✅ EndTime next to Parent/Guardian Email
+  r.EndTime || "",
+  r.StartTime || ""
+]));
+
 
     const aoa = [headers, ...rows];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -834,3 +837,4 @@
 </script>
 </body>
 </html>
+
