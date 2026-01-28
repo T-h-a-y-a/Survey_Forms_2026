@@ -279,36 +279,11 @@
   let editIndex = -1;
   let dirty = false;
 
-  // ✅ Start/End time tracking (IST)
-  let entryStartIST = "";
-
-  function nowIST() {
-    // Example: "2026-01-28 09:15:30 IST"
-    const d = new Date();
-    const parts = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Asia/Kolkata",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false
-    }).formatToParts(d);
-
-    const get = (type) => parts.find(p => p.type === type)?.value || "";
-    const yyyy = get("year");
-    const mm   = get("month");
-    const dd   = get("day");
-    const hh   = get("hour");
-    const mi   = get("minute");
-    const ss   = get("second");
-
-    return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss} IST`;
-  }
-
+  // ✅ NEW: Start/End time tracking
+  let entryStartISO = "";
+  function nowISO() { return new Date().toISOString(); }
   function startEntryIfNeeded() {
-    if (!entryStartIST) entryStartIST = nowIST();
+    if (!entryStartISO) entryStartISO = nowISO();
   }
 
   function setMsg(text, type="") {
@@ -423,8 +398,14 @@
     makeSingleSelectCheckboxGroup("Q9");
 
     document.querySelectorAll("input,select,textarea").forEach(el => {
-      el.addEventListener("input", () => { startEntryIfNeeded(); dirty = true; });
-      el.addEventListener("change", () => { startEntryIfNeeded(); dirty = true; });
+      el.addEventListener("input", () => {
+        startEntryIfNeeded();
+        dirty = true;
+      });
+      el.addEventListener("change", () => {
+        startEntryIfNeeded();
+        dirty = true;
+      });
     });
 
     loadFromStorage();
@@ -548,10 +529,11 @@
 
       Q9: yesNoToYN_fromCheckbox("Q9"),
 
-      StartTime: entryStartIST || "",
+      // ✅ NEW fields (will export at END)
+      StartTime: entryStartISO || "",
       EndTime: "",
 
-      _savedAt: nowIST()
+      _savedAt: new Date().toISOString()
     };
   }
 
@@ -609,7 +591,9 @@
     setCheckedValues("Q8", (d.Q8||"").split(",").filter(Boolean));
     setCheckedValues("Q9", d.Q9 === "Y" ? ["Yes"] : d.Q9 === "N" ? ["No"] : []);
 
-    entryStartIST = d.StartTime || "";
+    // ✅ restore existing start time if editing
+    entryStartISO = d.StartTime || "";
+
     dirty = true;
   }
 
@@ -625,7 +609,7 @@
     setMsg("");
     dirty = false;
 
-    entryStartIST = "";
+    entryStartISO = "";
   }
 
   function escapeHtml(s) {
@@ -699,13 +683,14 @@
     const err = validate();
     if (err) return setMsg(err, "error");
 
+    // if submitted without typing, set start time now
     startEntryIfNeeded();
 
     const data = getFormData();
-    data.EndTime = nowIST();
+    data.EndTime = nowISO();
 
     if (editIndex >= 0) {
-      data.StartTime = records[editIndex]?.StartTime || data.StartTime || entryStartIST || "";
+      data.StartTime = records[editIndex]?.StartTime || data.StartTime || entryStartISO || "";
       records[editIndex] = data;
       editIndex = -1;
       $("submitBtn").textContent = "Submit";
@@ -732,7 +717,7 @@
     setMsg("All stored data deleted.", "success");
   });
 
-  // ✅ EXPORT: Parent/Guardian Email -> EndTime -> StartTime
+  // ✅ EXPORT: StartTime/EndTime moved to END of headers
   $("exportBtn").addEventListener("click", () => {
     if (!records.length) return setMsg("No records to export.", "error");
 
@@ -756,8 +741,9 @@
       "Empty Column","Empty Column","Empty Column","Empty Column","Empty Column","Empty Column",
       "Q9",
       "Parent/Guardian Email",
-      "EndTime",
-      "StartTime"
+
+      // ✅ NEW: at the END
+      "StartTime","EndTime"
     ];
 
     const rows = records.map(r => ([
@@ -825,8 +811,10 @@
 
       r.Q9 || "",
       r.ParentGuardianEmail || "",
-      r.EndTime || "",
-      r.StartTime || ""
+
+      // ✅ NEW: at END
+      r.StartTime || "",
+      r.EndTime || ""
     ]));
 
     const aoa = [headers, ...rows];
